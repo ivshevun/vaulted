@@ -1,4 +1,20 @@
 services:
+  auth:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    env_file:
+      - ./.env
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./apps/auth:/usr/src/app/apps/auth
+      - ./libs:/usr/src/app/libs
+      - ./prisma:/user/src/app/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
   postgres:
     image: postgres:latest
     container_name: postgres_container
