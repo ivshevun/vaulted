@@ -17,9 +17,17 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "esModuleInterop": true
-  },
-  "paths": {
-    "~/*": ["./src/*"]
+    "esModuleInterop": true,
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ],
+      "@app/common": [
+        "libs/common/src"
+      ],
+      "@app/common/*": [
+        "libs/common/src/*"
+      ]
+    }
   }
 }
