@@ -15,8 +15,6 @@ RUN npm install -g pnpm
 RUN pnpm install
 RUN npx prisma generate
 
-
-
 RUN pnpm run build auth
 
 CMD ["pnpm", "start:dev", "auth"]
