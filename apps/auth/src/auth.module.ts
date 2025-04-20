@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from './users';
 import { PrismaModule, PrismaService } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
+import { TokenModule } from './token';
 import Joi from 'joi';
 
 @Module({
@@ -19,6 +20,7 @@ import Joi from 'joi';
         DATABASE_URL: Joi.string().required(),
       }),
     }),
+    TokenModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, UsersService, PrismaService],
