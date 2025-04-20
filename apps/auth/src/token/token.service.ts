@@ -10,21 +10,34 @@ export class TokenService {
     private readonly configService: ConfigService,
   ) {}
 
-  signAccessToken(payload: UserDto) {
+  signTokens(user: UserDto) {
+    const jwtPayload: UserDto = {
+      id: user.id,
+      email: user.email,
+    };
+    const accessToken = this.signAccessToken(jwtPayload);
+    const refreshToken = this.signRefreshToken(jwtPayload);
+
+    return { accessToken, refreshToken };
+  }
+
+  private signAccessToken(payload: UserDto) {
     const expirationSeconds = this.configService.get<string>(
       'JWT_ACCESS_EXPIRATION_SECONDS',
     )!;
+
     return this.jwtService.sign(payload, {
       expiresIn: `${expirationSeconds}s`,
     });
   }
 
-  signRefreshToken(payload: UserDto) {
-    const expirationSeconds = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRATION_SECONDS',
+  private signRefreshToken(payload: UserDto) {
+    const expirationDays = this.configService.get<string>(
+      'JWT_REFRESH_EXPIRATION_DAYS',
     )!;
+
     return this.jwtService.sign(payload, {
-      expiresIn: `${expirationSeconds}s`,
+      expiresIn: `${expirationDays}d`,
     });
   }
 }

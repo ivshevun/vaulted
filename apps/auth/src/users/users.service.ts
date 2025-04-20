@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '@app/common';
 import argon from 'argon2';
 
@@ -12,6 +12,12 @@ export class UsersService {
 
     return this.prisma.user.create({
       data: { ...createUserDto, password: hashedPassword },
+    });
+  }
+
+  findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
     });
   }
 }
