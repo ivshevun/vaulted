@@ -24,7 +24,7 @@ describe('UsersService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     password: fakeHash,
-    File: [],
+    files: [],
   };
 
   beforeEach(async () => {
