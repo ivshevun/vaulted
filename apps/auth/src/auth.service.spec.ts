@@ -1,0 +1,85 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthService } from './auth.service';
+import { UsersService } from './users';
+import { TokenService } from './token';
+import { PrismaService, UserDto } from '@app/common';
+import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { RegisterDto } from './dto';
+import { v4 as uuid } from 'uuid';
+import { User } from '@prisma/client';
+import { ConflictException } from '@nestjs/common';
+
+describe('AuthService', () => {
+  let service: AuthService;
+  let usersServiceMock: DeepMockProxy<UsersService>;
+  let tokenServiceMock: DeepMockProxy<TokenService>;
+  let prismaServiceMock: DeepMockProxy<PrismaService>;
+
+  const registerDto: RegisterDto = {
+    name: 'john',
+    email: 'john@gmail.com',
+    password: '123456',
+  };
+  const user: User = {
+    id: uuid(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...registerDto,
+  };
+  const tokens = {
+    accessToken: 'accessToken',
+    refreshToken: 'refreshToken',
+  };
+
+  beforeEach(async () => {
+    usersServiceMock = mockDeep<UsersService>();
+    tokenServiceMock = mockDeep<TokenService>();
+    prismaServiceMock = mockDeep<PrismaService>();
+
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        await ConfigModule.forRoot({
+          isGlobal: true,
+        }),
+        JwtModule.register({}),
+      ],
+      providers: [
+        AuthService,
+        { provide: UsersService, useValue: usersServiceMock },
+        { provide: TokenService, useValue: tokenServiceMock },
+        { provide: PrismaService, useValue: prismaServiceMock },
+      ],
+    }).compile();
+
+    service = module.get<AuthService>(AuthService);
+  });
+
+  describe('Register', () => {
+    it('should create a user and return JWT tokens', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(null);
+      usersServiceMock.create.mockResolvedValue(user);
+      tokenServiceMock.signTokens.mockReturnValue(tokens);
+
+      const accessToken = await service.register(registerDto);
+
+      expect(usersServiceMock.create).toHaveBeenCalledWith(registerDto);
+      expect(usersServiceMock.findByEmail).toHaveBeenCalledWith(
+        registerDto.email,
+      );
+      expect(tokenServiceMock.signTokens).toHaveBeenCalledWith(
+        new UserDto(user),
+      );
+      expect(accessToken).toBeDefined();
+    });
+    it('should throw a conflict exception if user already exists', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(user);
+      tokenServiceMock.signTokens.mockReturnValue(tokens);
+
+      await expect(service.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+  });
+});
