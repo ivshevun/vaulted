@@ -7,7 +7,7 @@ import { PrismaService } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto';
+import { LoginDto, RegisterDto } from './dto';
 import { Response } from 'express';
 
 describe('UsersController', () => {
@@ -17,10 +17,16 @@ describe('UsersController', () => {
   let prismaServiceMock: DeepMockProxy<PrismaService>;
   let authServiceMock: DeepMockProxy<AuthService>;
 
-  const tokens = {
+  const expectedTokens = {
     accessToken: 'accessToken',
     refreshToken: 'refreshToken',
   };
+
+  const res: Partial<Response> = {
+    cookie: jest.fn().mockReturnThis(),
+    status: jest.fn().mockImplementation().mockReturnValue(200),
+    send: jest.fn().mockReturnThis(),
+  } as unknown as Response;
 
   beforeEach(async () => {
     usersServiceMock = mockDeep<UsersService>();
@@ -28,7 +34,9 @@ describe('UsersController', () => {
     prismaServiceMock = mockDeep<PrismaService>();
     authServiceMock = mockDeep<AuthService>();
 
-    authServiceMock.register.mockResolvedValue(tokens);
+    authServiceMock.register.mockResolvedValue(expectedTokens);
+    tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
+    authServiceMock.login.mockResolvedValue(expectedTokens);
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [
@@ -50,12 +58,6 @@ describe('UsersController', () => {
   });
 
   describe('Register', () => {
-    const res: Partial<Response> = {
-      cookie: jest.fn().mockReturnThis(),
-      status: jest.fn().mockImplementation().mockReturnValue(200),
-      send: jest.fn().mockReturnThis(),
-    } as unknown as Response;
-
     const registerDto: RegisterDto = {
       name: 'john',
       email: 'john@gmail.com',
@@ -66,12 +68,27 @@ describe('UsersController', () => {
       await controller.register(registerDto, res as Response);
       expect(authServiceMock.register).toHaveBeenCalledWith(registerDto);
     });
-    it('should return the same authService.register returns', async () => {
+    it('should return the same accessToken authService.register returns', async () => {
       const controllerResult = await controller.register(
         registerDto,
         res as Response,
       );
-      expect(controllerResult.accessToken).toEqual(tokens.accessToken);
+      expect(controllerResult.accessToken).toEqual(expectedTokens.accessToken);
+    });
+  });
+
+  describe('Login', () => {
+    const loginDto: LoginDto = {
+      email: 'john@gmail.com',
+      password: '123456',
+    };
+    it('should call authService.login ', async () => {
+      await controller.login(loginDto, res as Response);
+      expect(authServiceMock.login).toHaveBeenCalledWith(loginDto);
+    });
+    it('should return the same accessToken authService.login returns', async () => {
+      const { accessToken } = await controller.login(loginDto, res as Response);
+      expect(accessToken).toBe(expectedTokens.accessToken);
     });
   });
 });

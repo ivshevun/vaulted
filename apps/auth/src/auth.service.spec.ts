@@ -6,10 +6,10 @@ import { PrismaService, UserDto } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { RegisterDto } from './dto';
+import { LoginDto, RegisterDto } from './dto';
 import { v4 as uuid } from 'uuid';
 import { User } from '@prisma/client';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -23,12 +23,14 @@ describe('AuthService', () => {
     password: '123456',
   };
   const user: User = {
+    ...registerDto,
     id: uuid(),
     createdAt: new Date(),
     updatedAt: new Date(),
-    ...registerDto,
+    password:
+      '$argon2id$v=19$m=65536,t=3,p=4$FxjENYPL4/hh7lduLnH0xQ$DC7fmLxWf3tKUXnq2mMfwPfJg61I2uSUKDOO3qglPNQ',
   };
-  const tokens = {
+  const expectedTokens = {
     accessToken: 'accessToken',
     refreshToken: 'refreshToken',
   };
@@ -60,7 +62,7 @@ describe('AuthService', () => {
     it('should create a user and return JWT tokens', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(null);
       usersServiceMock.create.mockResolvedValue(user);
-      tokenServiceMock.signTokens.mockReturnValue(tokens);
+      tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
 
       const accessToken = await service.register(registerDto);
 
@@ -75,10 +77,45 @@ describe('AuthService', () => {
     });
     it('should throw a conflict exception if user already exists', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(user);
-      tokenServiceMock.signTokens.mockReturnValue(tokens);
+      tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
 
       await expect(service.register(registerDto)).rejects.toThrow(
         ConflictException,
+      );
+    });
+  });
+
+  describe('Login', () => {
+    const loginDto: LoginDto = {
+      email: registerDto.email,
+      password: registerDto.password,
+    };
+
+    it('should successfully login and return access token', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(user);
+      tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
+
+      const tokens = await service.login(loginDto);
+
+      expect(tokens).toEqual(expectedTokens);
+    });
+    it('should throw an unauthorized exception if user is not found', async () => {
+      usersServiceMock.findByEmail.mockResolvedValue(null);
+
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+    it('should throw an unauthorized exception if user password is not valid', async () => {
+      const invalidPasswordDto: LoginDto = {
+        email: loginDto.email,
+        password: 'incorrect_password',
+      };
+
+      usersServiceMock.findByEmail.mockResolvedValue(user);
+
+      await expect(service.login(invalidPasswordDto)).rejects.toThrow(
+        UnauthorizedException,
       );
     });
   });
