@@ -1,12 +1,28 @@
-import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto';
 import { Response } from 'express';
 import { RequestWithCookies } from '@app/common/interfaces';
+import { JwtGuard } from './guards';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @UseGuards(JwtGuard)
+  @Get('protected')
+  protected() {
+    return 'You are logged in';
+  }
 
   @Post('register')
   async register(
