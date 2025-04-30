@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserDto } from '@app/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -19,6 +19,16 @@ export class TokenService {
     const refreshToken = this.signRefreshToken(jwtPayload);
 
     return { accessToken, refreshToken };
+  }
+
+  verifyToken(token: string) {
+    try {
+      return this.jwtService.verifyAsync<UserDto>(token, {
+        secret: this.configService.get('JWT_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 
   private signAccessToken(payload: UserDto) {

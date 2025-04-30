@@ -13,6 +13,7 @@ import argon from 'argon2';
 
 @Injectable()
 export class AuthService {
+  public readonly REFRESH_TOKEN_NAME: string;
   private readonly EXPIRE_DAY_REFRESH_TOKEN: number;
 
   constructor(
@@ -23,6 +24,7 @@ export class AuthService {
     this.EXPIRE_DAY_REFRESH_TOKEN = configService.get<number>(
       'JWT_REFRESH_EXPIRATION_DAYS',
     )!;
+    this.REFRESH_TOKEN_NAME = 'refreshToken';
   }
 
   async register(registerDto: RegisterDto) {
@@ -55,6 +57,16 @@ export class AuthService {
     }
 
     const userDto = new UserDto(userInDB);
+    return this.tokenService.signTokens(userDto);
+  }
+
+  async refresh(refreshToken: string | null) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
+    const userDto = await this.tokenService.verifyToken(refreshToken);
+
     return this.tokenService.signTokens(userDto);
   }
 
