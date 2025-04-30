@@ -40,6 +40,8 @@ describe('AuthService', () => {
     tokenServiceMock = mockDeep<TokenService>();
     prismaServiceMock = mockDeep<PrismaService>();
 
+    tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         await ConfigModule.forRoot({
@@ -62,7 +64,6 @@ describe('AuthService', () => {
     it('should create a user and return JWT tokens', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(null);
       usersServiceMock.create.mockResolvedValue(user);
-      tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
 
       const accessToken = await service.register(registerDto);
 
@@ -77,7 +78,6 @@ describe('AuthService', () => {
     });
     it('should throw a conflict exception if user already exists', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(user);
-      tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
 
       await expect(service.register(registerDto)).rejects.toThrow(
         ConflictException,
@@ -93,7 +93,6 @@ describe('AuthService', () => {
 
     it('should successfully login and return access token', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(user);
-      tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
 
       const tokens = await service.login(loginDto);
 
@@ -115,6 +114,30 @@ describe('AuthService', () => {
       usersServiceMock.findByEmail.mockResolvedValue(user);
 
       await expect(service.login(invalidPasswordDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
+  describe('Refresh', () => {
+    it('should return accessToken if refreshToken is valid', async () => {
+      tokenServiceMock.verifyToken.mockResolvedValue(new UserDto(user));
+
+      const accessToken = await service.refresh(expectedTokens.refreshToken);
+
+      expect(accessToken).toBeDefined();
+    });
+    it('should throw an unauthorized exception if refresh token is not set', async () => {
+      await expect(service.refresh(null)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+    it('should throw an unauthorized exception if refresh token is invalid', async () => {
+      tokenServiceMock.verifyToken.mockImplementation(() => {
+        throw new UnauthorizedException('Invalid refresh token');
+      });
+
+      await expect(service.refresh('invalid-refresh')).rejects.toThrow(
         UnauthorizedException,
       );
     });

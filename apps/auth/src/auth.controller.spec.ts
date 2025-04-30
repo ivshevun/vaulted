@@ -9,6 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto';
 import { Response } from 'express';
+import { RequestWithCookies } from '@app/common/interfaces';
 
 describe('UsersController', () => {
   let controller: AuthController;
@@ -16,6 +17,8 @@ describe('UsersController', () => {
   let tokenServiceMock: DeepMockProxy<TokenService>;
   let prismaServiceMock: DeepMockProxy<PrismaService>;
   let authServiceMock: DeepMockProxy<AuthService>;
+
+  let reqCookiesMock: DeepMockProxy<RequestWithCookies>;
 
   const expectedTokens = {
     accessToken: 'accessToken',
@@ -33,6 +36,8 @@ describe('UsersController', () => {
     tokenServiceMock = mockDeep<TokenService>();
     prismaServiceMock = mockDeep<PrismaService>();
     authServiceMock = mockDeep<AuthService>();
+
+    reqCookiesMock = mockDeep<RequestWithCookies>();
 
     authServiceMock.register.mockResolvedValue(expectedTokens);
     tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
@@ -88,6 +93,31 @@ describe('UsersController', () => {
     });
     it('should return the same accessToken authService.login returns', async () => {
       const { accessToken } = await controller.login(loginDto, res as Response);
+      expect(accessToken).toBe(expectedTokens.accessToken);
+    });
+  });
+
+  describe('Refresh', () => {
+    beforeEach(() => {
+      authServiceMock.refresh.mockResolvedValue(expectedTokens);
+      reqCookiesMock.cookies = {
+        refreshToken: expectedTokens.refreshToken,
+      };
+    });
+
+    it('should call authService.refresh with the provided refresh token ', async () => {
+      await controller.refresh(reqCookiesMock, res as Response);
+
+      expect(authServiceMock.refresh).toHaveBeenCalledWith(
+        expectedTokens.refreshToken,
+      );
+    });
+    it('should return the same accessToken authService.refresh returns', async () => {
+      const { accessToken } = await controller.refresh(
+        reqCookiesMock,
+        res as Response,
+      );
+
       expect(accessToken).toBe(expectedTokens.accessToken);
     });
   });
