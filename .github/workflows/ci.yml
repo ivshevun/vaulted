@@ -27,13 +27,13 @@ jobs:
       - name: 📦 Install deps
         run: pnpm install
 
-      - name: 🛠 Build app
-        run: pnpm build
-
       - name: 🛠 Prisma generate
         run: |
           pnpm prisma generate
           ls node_modules/@prisma/client
+
+      - name: 🛠 Build app
+        run: pnpm build
 
       - name: 🧼 Lint
         run: pnpm lint
