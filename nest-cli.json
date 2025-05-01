@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/vaulted/src",
+  "sourceRoot": "apps/auth/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/vaulted/tsconfig.app.json"
+    "tsConfigPath": "apps/auth/tsconfig.app.json"
   },
   "projects": {
     "auth": {
@@ -25,17 +25,8 @@
       "compilerOptions": {
         "tsConfigPath": "libs/common/tsconfig.lib.json"
       }
-    },
-    "vaulted": {
-      "type": "application",
-      "root": "apps/vaulted",
-      "entryFile": "main",
-      "sourceRoot": "apps/vaulted/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/vaulted/tsconfig.app.json"
-      }
     }
   },
   "monorepo": true,
-  "root": "apps/vaulted"
+  "root": "apps/auth"
 }
