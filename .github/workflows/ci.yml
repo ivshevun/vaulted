@@ -27,6 +27,9 @@ jobs:
       - name: 📦 Install deps
         run: pnpm install
 
+      - name: 🛠 Prisma generate
+        run: npx prisma generate
+
       - name: 🧼 Lint
         run: pnpm lint
 
