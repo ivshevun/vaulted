@@ -28,9 +28,7 @@ jobs:
         run: pnpm install
 
       - name: 🛠 Prisma generate
-        run: |
-          pnpm prisma generate
-          ls node_modules/@prisma/client
+        run: pnpm prisma generate
 
       - name: 🛠 Build app
         run: pnpm build
