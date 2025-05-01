@@ -13,10 +13,17 @@ import { LoginDto, RegisterDto } from './dto';
 import { Response } from 'express';
 import { RequestWithCookies } from '@app/common/interfaces';
 import { JwtGuard } from './guards';
+import { MessagePattern } from '@nestjs/microservices';
+import { of } from 'rxjs';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @MessagePattern('ping')
+  ping() {
+    return of('pong');
+  }
 
   @UseGuards(JwtGuard)
   @Get('protected')

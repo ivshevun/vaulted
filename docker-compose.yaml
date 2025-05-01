@@ -1,6 +1,22 @@
 services:
+  api-gateway:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./apps/api-gateway/Dockerfile
+    env_file:
+      - apps/api-gateway/.env
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./apps/api-gateway:/usr/src/app/apps/api-gateway
+      - ./libs:/usr/src/app/libs
+      - ./prisma:/user/src/app/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
   auth:
-    restart: always
+    restart: unless-stopped
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
