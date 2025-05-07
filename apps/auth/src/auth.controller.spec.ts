@@ -3,14 +3,14 @@ import { AuthController } from './auth.controller';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { PrismaService } from '@app/common';
+import { LoginDto, PrismaService, RegisterDto } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto';
 import { Response } from 'express';
 import { RequestWithCookies } from '@app/common/interfaces';
 
+// TODO: REWRITE TESTS
 describe('UsersController', () => {
   let controller: AuthController;
   let usersServiceMock: DeepMockProxy<UsersService>;

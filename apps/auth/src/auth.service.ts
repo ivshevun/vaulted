@@ -1,37 +1,25 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UsersService } from './users';
-import { LoginDto, RegisterDto } from './dto';
-import { UserDto } from '@app/common';
+import { LoginDto, RegisterDto, UserDto } from '@app/common';
 import { TokenService } from './token';
-import { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
 import argon from 'argon2';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthService {
-  public readonly REFRESH_TOKEN_NAME: string;
-  private readonly EXPIRE_DAY_REFRESH_TOKEN: number;
-
   constructor(
-    readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly tokenService: TokenService,
-  ) {
-    this.EXPIRE_DAY_REFRESH_TOKEN = configService.get<number>(
-      'JWT_REFRESH_EXPIRATION_DAYS',
-    )!;
-    this.REFRESH_TOKEN_NAME = 'refreshToken';
-  }
+  ) {}
 
   async register(registerDto: RegisterDto) {
     const userInDb = await this.usersService.findByEmail(registerDto.email);
 
     if (userInDb) {
-      throw new ConflictException('User already exists');
+      throw new RpcException({
+        message: 'User already exists',
+        status: HttpStatus.CONFLICT,
+      });
     }
 
     const createdUser = await this.usersService.create(registerDto);
@@ -44,7 +32,10 @@ export class AuthService {
     const userInDB = await this.usersService.findByEmail(loginDto.email);
 
     if (!userInDB) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new RpcException({
+        message: 'Invalid credentials',
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     const isValidPassword = await argon.verify(
@@ -53,7 +44,10 @@ export class AuthService {
     );
 
     if (!isValidPassword) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new RpcException({
+        message: 'Invalid credentials',
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     const userDto = new UserDto(userInDB);
@@ -62,24 +56,14 @@ export class AuthService {
 
   async refresh(refreshToken: string | null) {
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found');
+      throw new RpcException({
+        message: 'Refresh token not found',
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     const userDto = await this.tokenService.verifyToken(refreshToken);
 
     return this.tokenService.signTokens(userDto);
-  }
-
-  addRefreshTokenToResponse(res: Response, refreshToken: string) {
-    const expiresIn = new Date();
-
-    expiresIn.setDate(expiresIn.getDate() + this.EXPIRE_DAY_REFRESH_TOKEN);
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      expires: expiresIn,
-      secure: true,
-      sameSite: 'lax',
-    });
   }
 }

@@ -1,20 +1,14 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto';
-import { Response } from 'express';
-import { RequestWithCookies } from '@app/common/interfaces';
-import { JwtGuard } from './guards';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { of } from 'rxjs';
+import {
+  AuthorizePayload,
+  LoginPayload,
+  RefreshPayload,
+  RegisterPayload,
+} from '@app/common';
+import { JwtGuard } from './guards';
 
 @Controller('auth')
 export class AuthController {
@@ -25,52 +19,28 @@ export class AuthController {
     return of('pong');
   }
 
+  @MessagePattern('register')
+  async register(@Payload() registerPayload: RegisterPayload) {
+    const tokens = await this.authService.register(registerPayload);
+
+    return of(tokens);
+  }
+
+  @MessagePattern('login')
+  async login(@Payload() loginPayload: LoginPayload) {
+    const tokens = await this.authService.login(loginPayload);
+
+    return of(tokens);
+  }
+
+  @MessagePattern('refresh')
+  async refresh(@Payload() { refreshToken }: RefreshPayload) {
+    return await this.authService.refresh(refreshToken);
+  }
+
   @UseGuards(JwtGuard)
-  @Get('protected')
-  protected() {
-    return 'You are logged in';
-  }
-
-  @Post('register')
-  async register(
-    @Body() registerDto: RegisterDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const { accessToken, refreshToken } =
-      await this.authService.register(registerDto);
-
-    this.authService.addRefreshTokenToResponse(res, refreshToken);
-    return { accessToken };
-  }
-
-  @Post('login')
-  @HttpCode(200)
-  async login(
-    @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const { accessToken, refreshToken } =
-      await this.authService.login(loginDto);
-
-    this.authService.addRefreshTokenToResponse(res, refreshToken);
-
-    return { accessToken };
-  }
-
-  @Post('refresh')
-  @HttpCode(200)
-  async refresh(
-    @Req() req: RequestWithCookies,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const refreshTokenFromCookie = req.cookies.refreshToken;
-
-    const { accessToken, refreshToken } = await this.authService.refresh(
-      refreshTokenFromCookie,
-    );
-
-    this.authService.addRefreshTokenToResponse(res, refreshToken);
-
-    return { accessToken };
+  @MessagePattern('authorize')
+  authorize(@Payload() payload: AuthorizePayload) {
+    return payload.user;
   }
 }
