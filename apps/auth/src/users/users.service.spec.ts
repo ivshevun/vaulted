@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
-import { PrismaService } from '@app/common';
-import { RegisterDto } from '../dto';
+import { PrismaService, RegisterDto } from '@app/common';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';

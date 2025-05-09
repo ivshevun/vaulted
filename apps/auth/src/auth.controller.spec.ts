@@ -3,14 +3,12 @@ import { AuthController } from './auth.controller';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { LoginDto, PrismaService, RegisterDto } from '@app/common';
+import { LoginPayload, PrismaService, RegisterPayload } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
-import { RequestWithCookies } from '@app/common/interfaces';
+import { firstValueFrom } from 'rxjs';
 
-// TODO: REWRITE TESTS
 describe('UsersController', () => {
   let controller: AuthController;
   let usersServiceMock: DeepMockProxy<UsersService>;
@@ -18,26 +16,16 @@ describe('UsersController', () => {
   let prismaServiceMock: DeepMockProxy<PrismaService>;
   let authServiceMock: DeepMockProxy<AuthService>;
 
-  let reqCookiesMock: DeepMockProxy<RequestWithCookies>;
-
   const expectedTokens = {
     accessToken: 'accessToken',
     refreshToken: 'refreshToken',
   };
-
-  const res: Partial<Response> = {
-    cookie: jest.fn().mockReturnThis(),
-    status: jest.fn().mockImplementation().mockReturnValue(200),
-    send: jest.fn().mockReturnThis(),
-  } as unknown as Response;
 
   beforeEach(async () => {
     usersServiceMock = mockDeep<UsersService>();
     tokenServiceMock = mockDeep<TokenService>();
     prismaServiceMock = mockDeep<PrismaService>();
     authServiceMock = mockDeep<AuthService>();
-
-    reqCookiesMock = mockDeep<RequestWithCookies>();
 
     authServiceMock.register.mockResolvedValue(expectedTokens);
     tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
@@ -63,36 +51,37 @@ describe('UsersController', () => {
   });
 
   describe('Register', () => {
-    const registerDto: RegisterDto = {
+    const registerDto: RegisterPayload = {
       name: 'john',
       email: 'john@gmail.com',
       password: '123456',
     };
 
     it('should call authService.register', async () => {
-      await controller.register(registerDto, res as Response);
+      await controller.register(registerDto);
       expect(authServiceMock.register).toHaveBeenCalledWith(registerDto);
     });
     it('should return the same accessToken authService.register returns', async () => {
-      const controllerResult = await controller.register(
-        registerDto,
-        res as Response,
+      const controllerResult = await firstValueFrom(
+        await controller.register(registerDto),
       );
       expect(controllerResult.accessToken).toEqual(expectedTokens.accessToken);
     });
   });
 
   describe('Login', () => {
-    const loginDto: LoginDto = {
+    const loginPayload: LoginPayload = {
       email: 'john@gmail.com',
       password: '123456',
     };
     it('should call authService.login ', async () => {
-      await controller.login(loginDto, res as Response);
-      expect(authServiceMock.login).toHaveBeenCalledWith(loginDto);
+      await controller.login(loginPayload);
+      expect(authServiceMock.login).toHaveBeenCalledWith(loginPayload);
     });
     it('should return the same accessToken authService.login returns', async () => {
-      const { accessToken } = await controller.login(loginDto, res as Response);
+      const { accessToken } = await firstValueFrom(
+        await controller.login(loginPayload),
+      );
       expect(accessToken).toBe(expectedTokens.accessToken);
     });
   });
@@ -100,23 +89,19 @@ describe('UsersController', () => {
   describe('Refresh', () => {
     beforeEach(() => {
       authServiceMock.refresh.mockResolvedValue(expectedTokens);
-      reqCookiesMock.cookies = {
-        refreshToken: expectedTokens.refreshToken,
-      };
     });
 
     it('should call authService.refresh with the provided refresh token ', async () => {
-      await controller.refresh(reqCookiesMock, res as Response);
+      await controller.refresh({ refreshToken: expectedTokens.refreshToken });
 
       expect(authServiceMock.refresh).toHaveBeenCalledWith(
         expectedTokens.refreshToken,
       );
     });
     it('should return the same accessToken authService.refresh returns', async () => {
-      const { accessToken } = await controller.refresh(
-        reqCookiesMock,
-        res as Response,
-      );
+      const { accessToken } = await controller.refresh({
+        refreshToken: expectedTokens.refreshToken,
+      });
 
       expect(accessToken).toBe(expectedTokens.accessToken);
     });

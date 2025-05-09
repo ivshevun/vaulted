@@ -8,7 +8,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { v4 as uuid } from 'uuid';
 import { User } from '@prisma/client';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -79,7 +79,7 @@ describe('AuthService', () => {
       usersServiceMock.findByEmail.mockResolvedValue(user);
 
       await expect(service.register(registerDto)).rejects.toThrow(
-        ConflictException,
+        'User already exists',
       );
     });
   });
@@ -101,7 +101,7 @@ describe('AuthService', () => {
       usersServiceMock.findByEmail.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
+        'Invalid credentials',
       );
     });
     it('should throw an unauthorized exception if user password is not valid', async () => {
@@ -113,7 +113,7 @@ describe('AuthService', () => {
       usersServiceMock.findByEmail.mockResolvedValue(user);
 
       await expect(service.login(invalidPasswordDto)).rejects.toThrow(
-        UnauthorizedException,
+        'Invalid credentials',
       );
     });
   });
@@ -128,7 +128,7 @@ describe('AuthService', () => {
     });
     it('should throw an unauthorized exception if refresh token is not set', async () => {
       await expect(service.refresh(null)).rejects.toThrow(
-        UnauthorizedException,
+        'Invalid refresh token',
       );
     });
     it('should throw an unauthorized exception if refresh token is invalid', async () => {
@@ -137,7 +137,7 @@ describe('AuthService', () => {
       });
 
       await expect(service.refresh('invalid-refresh')).rejects.toThrow(
-        UnauthorizedException,
+        'Invalid refresh token',
       );
     });
   });

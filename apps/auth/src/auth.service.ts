@@ -57,7 +57,7 @@ export class AuthService {
   async refresh(refreshToken: string | null) {
     if (!refreshToken) {
       throw new RpcException({
-        message: 'Refresh token not found',
+        message: 'Invalid refresh token',
         status: HttpStatus.UNAUTHORIZED,
       });
     }
