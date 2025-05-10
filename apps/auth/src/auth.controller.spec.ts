@@ -9,7 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { firstValueFrom } from 'rxjs';
 
-describe('UsersController', () => {
+describe('AuthController', () => {
   let controller: AuthController;
   let usersServiceMock: DeepMockProxy<UsersService>;
   let tokenServiceMock: DeepMockProxy<TokenService>;
@@ -33,9 +33,7 @@ describe('UsersController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        await ConfigModule.forRoot({
-          isGlobal: true,
-        }),
+        await ConfigModule.forRoot({ isGlobal: true }),
         JwtModule.register({}),
       ],
       controllers: [AuthController],
@@ -59,13 +57,16 @@ describe('UsersController', () => {
 
     it('should call authService.register', async () => {
       await controller.register(registerDto);
+
       expect(authServiceMock.register).toHaveBeenCalledWith(registerDto);
     });
-    it('should return the same accessToken authService.register returns', async () => {
-      const controllerResult = await firstValueFrom(
+
+    it('should return accessToken from authService.register', async () => {
+      const { accessToken } = await firstValueFrom(
         await controller.register(registerDto),
       );
-      expect(controllerResult.accessToken).toEqual(expectedTokens.accessToken);
+
+      expect(accessToken).toBe(expectedTokens.accessToken);
     });
   });
 
@@ -74,14 +75,18 @@ describe('UsersController', () => {
       email: 'john@gmail.com',
       password: '123456',
     };
-    it('should call authService.login ', async () => {
+
+    it('should call authService.login', async () => {
       await controller.login(loginPayload);
+
       expect(authServiceMock.login).toHaveBeenCalledWith(loginPayload);
     });
-    it('should return the same accessToken authService.login returns', async () => {
+
+    it('should return accessToken from authService.login', async () => {
       const { accessToken } = await firstValueFrom(
         await controller.login(loginPayload),
       );
+
       expect(accessToken).toBe(expectedTokens.accessToken);
     });
   });
@@ -91,14 +96,15 @@ describe('UsersController', () => {
       authServiceMock.refresh.mockResolvedValue(expectedTokens);
     });
 
-    it('should call authService.refresh with the provided refresh token ', async () => {
+    it('should call authService.refresh with refreshToken', async () => {
       await controller.refresh({ refreshToken: expectedTokens.refreshToken });
 
       expect(authServiceMock.refresh).toHaveBeenCalledWith(
         expectedTokens.refreshToken,
       );
     });
-    it('should return the same accessToken authService.refresh returns', async () => {
+
+    it('should return accessToken from authService.refresh', async () => {
       const { accessToken } = await controller.refresh({
         refreshToken: expectedTokens.refreshToken,
       });

@@ -8,18 +8,12 @@ import { LoginDto, RegisterDto, RequestWithCookies, Tokens } from '@app/common';
 import { Response } from 'express';
 import { of } from 'rxjs';
 
-describe('AuthController', () => {
+describe('AuthController (API Gateway)', () => {
   let controller: AuthController;
   let clientProxyMock: DeepMockProxy<ClientProxy>;
-
   let expectedTokens: Tokens;
-  let reqCookiesMock: Partial<RequestWithCookies>;
-
-  const res: Partial<Response> = {
-    cookie: jest.fn().mockReturnThis(),
-    status: jest.fn().mockImplementation().mockReturnValue(200),
-    send: jest.fn().mockReturnThis(),
-  } as unknown as Response;
+  let resMock: Partial<Response>;
+  let reqMock: Partial<RequestWithCookies>;
 
   beforeEach(async () => {
     expectedTokens = {
@@ -27,109 +21,82 @@ describe('AuthController', () => {
       refreshToken: 'refreshToken',
     };
 
-    reqCookiesMock = {
-      cookies: {
-        refreshToken: expectedTokens.refreshToken,
-      },
-    } as unknown as RequestWithCookies;
-
     clientProxyMock = mockDeep<ClientProxy>();
     clientProxyMock.send.mockReturnValue(of(expectedTokens));
 
+    resMock = {
+      cookie: jest.fn(),
+      status: jest.fn().mockReturnValue(200),
+      send: jest.fn(),
+    };
+
+    reqMock = {
+      cookies: {
+        refreshToken: expectedTokens.refreshToken,
+      },
+    };
+
     const module = await Test.createTestingModule({
-      imports: [
-        await ConfigModule.forRoot({
-          isGlobal: true,
-        }),
-      ],
+      imports: [await ConfigModule.forRoot({ isGlobal: true })],
       controllers: [AuthController],
-      providers: [
-        AuthService,
-        {
-          provide: 'auth',
-          useValue: clientProxyMock,
-        },
-      ],
+      providers: [AuthService, { provide: 'auth', useValue: clientProxyMock }],
     }).compile();
 
     controller = module.get(AuthController);
   });
 
   describe('Register', () => {
-    let registerDto: RegisterDto;
+    const dto: RegisterDto = {
+      name: 'john',
+      email: 'john@gmail.com',
+      password: '123456',
+    };
 
-    beforeEach(() => {
-      registerDto = {
-        name: 'john',
-        email: 'john@gmail.com',
-        password: '123456',
-      };
+    it('should call authClient.send with "register" and dto', async () => {
+      await controller.register(dto, resMock as Response);
+      expect(clientProxyMock.send).toHaveBeenCalledWith('register', dto);
     });
 
-    it('should call authClient.register', async () => {
-      await controller.register(registerDto, res as Response);
-
-      expect(clientProxyMock.send).toHaveBeenCalledWith(
-        'register',
-        registerDto,
-      );
-    });
-    it('should return the same accessToken authClient.register returns', async () => {
-      const receivedToken = await controller.register(
-        registerDto,
-        res as Response,
-      );
-
-      expect(receivedToken).toEqual({
-        accessToken: expectedTokens.accessToken,
-      });
+    it('should return return accessToken', async () => {
+      const result = await controller.register(dto, resMock as Response);
+      expect(result).toEqual({ accessToken: expectedTokens.accessToken });
     });
   });
+
   describe('Login', () => {
-    let loginDto: LoginDto;
+    const dto: LoginDto = {
+      email: 'john@gmail.com',
+      password: '123456',
+    };
 
-    beforeEach(() => {
-      loginDto = {
-        email: 'john@gmail.com',
-        password: '123456',
-      };
-
-      reqCookiesMock.cookies = {
-        refreshToken: expectedTokens.refreshToken,
-      };
+    it('should call authClient.send with "login" and dto', async () => {
+      await controller.login(dto, resMock as Response);
+      expect(clientProxyMock.send).toHaveBeenCalledWith('login', dto);
     });
 
-    it('should call authClient.login', async () => {
-      await controller.login(loginDto, res as Response);
-
-      expect(clientProxyMock.send).toHaveBeenCalledWith('login', loginDto);
-    });
-    it('should return the same accessToken authClient.login returns', async () => {
-      const receivedToken = await controller.login(loginDto, res as Response);
-
-      expect(receivedToken).toEqual({
-        accessToken: expectedTokens.accessToken,
-      });
+    it('should return accessToken', async () => {
+      const result = await controller.login(dto, resMock as Response);
+      expect(result).toEqual({ accessToken: expectedTokens.accessToken });
     });
   });
-  describe('Refresh', () => {
-    it('should call authClient.refresh with the provided refresh token ', async () => {
-      await controller.refresh(
-        reqCookiesMock as RequestWithCookies,
-        res as Response,
-      );
 
+  describe('Refresh', () => {
+    it('should call authClient.send with refreshToken from cookies', async () => {
+      await controller.refresh(
+        reqMock as RequestWithCookies,
+        resMock as Response,
+      );
       expect(clientProxyMock.send).toHaveBeenCalledWith('refresh', {
         refreshToken: expectedTokens.refreshToken,
       });
     });
-    it('should return the same accessToken authClient.refresh returns', async () => {
-      const { accessToken } = await controller.refresh(
-        reqCookiesMock as RequestWithCookies,
-        res as Response,
-      );
 
-      expect(accessToken).toBe(expectedTokens.accessToken);
+    it('should return accessToken', async () => {
+      const result = await controller.refresh(
+        reqMock as RequestWithCookies,
+        resMock as Response,
+      );
+      expect(result).toEqual({ accessToken: expectedTokens.accessToken });
     });
   });
 });
