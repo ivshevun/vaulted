@@ -9,11 +9,13 @@ import { Response } from 'express';
 import { of } from 'rxjs';
 
 describe('AuthController (API Gateway)', () => {
+  let service: AuthService;
   let controller: AuthController;
   let clientProxyMock: DeepMockProxy<ClientProxy>;
   let expectedTokens: Tokens;
   let resMock: Partial<Response>;
   let reqMock: Partial<RequestWithCookies>;
+  let authServiceMock: DeepMockProxy<AuthService>;
 
   beforeEach(async () => {
     expectedTokens = {
@@ -22,6 +24,8 @@ describe('AuthController (API Gateway)', () => {
     };
 
     clientProxyMock = mockDeep<ClientProxy>();
+    authServiceMock = mockDeep<AuthService>();
+
     clientProxyMock.send.mockReturnValue(of(expectedTokens));
 
     resMock = {
@@ -39,10 +43,17 @@ describe('AuthController (API Gateway)', () => {
     const module = await Test.createTestingModule({
       imports: [await ConfigModule.forRoot({ isGlobal: true })],
       controllers: [AuthController],
-      providers: [AuthService, { provide: 'auth', useValue: clientProxyMock }],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: authServiceMock,
+        },
+        { provide: 'auth', useValue: clientProxyMock },
+      ],
     }).compile();
 
     controller = module.get(AuthController);
+    service = module.get(AuthService);
   });
 
   describe('Register', () => {
@@ -61,6 +72,14 @@ describe('AuthController (API Gateway)', () => {
       const result = await controller.register(dto, resMock as Response);
       expect(result).toEqual({ accessToken: expectedTokens.accessToken });
     });
+
+    it('should call authService.addRefreshTokenToResponse', async () => {
+      await controller.register(dto, resMock as Response);
+      expect(service.addRefreshTokenToResponse).toHaveBeenCalledWith(
+        resMock as Response,
+        expectedTokens.refreshToken,
+      );
+    });
   });
 
   describe('Login', () => {
@@ -75,8 +94,16 @@ describe('AuthController (API Gateway)', () => {
     });
 
     it('should return accessToken', async () => {
-      const result = await controller.login(dto, resMock as Response);
-      expect(result).toEqual({ accessToken: expectedTokens.accessToken });
+      const { accessToken } = await controller.login(dto, resMock as Response);
+      expect(accessToken).toEqual(accessToken);
+    });
+
+    it('should call authService.addRefreshTokenToResponse', async () => {
+      await controller.login(dto, resMock as Response);
+      expect(service.addRefreshTokenToResponse).toHaveBeenCalledWith(
+        resMock as Response,
+        expectedTokens.refreshToken,
+      );
     });
   });
 
@@ -97,6 +124,17 @@ describe('AuthController (API Gateway)', () => {
         resMock as Response,
       );
       expect(result).toEqual({ accessToken: expectedTokens.accessToken });
+    });
+
+    it('should call authService.addRefreshTokenToResponse', async () => {
+      await controller.refresh(
+        reqMock as RequestWithCookies,
+        resMock as Response,
+      );
+      expect(service.addRefreshTokenToResponse).toHaveBeenCalledWith(
+        resMock as Response,
+        expectedTokens.refreshToken,
+      );
     });
   });
 });
