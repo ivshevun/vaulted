@@ -1,0 +1,20 @@
+{
+  "rootDir": "../",
+  "testRegex": "e2e/.*\\.e2e-spec\\.ts$",
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "testEnvironment": "node",
+  "setupFiles": [
+    "dotenv/config"
+  ],
+  "moduleNameMapper": {
+    "^@app/common/(.*)$": "<rootDir>/libs/common/src/$1",
+    "^@app/common$": "<rootDir>/libs/common/src"
+  }
+}

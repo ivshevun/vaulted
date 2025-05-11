@@ -7,9 +7,12 @@ COPY pnpm-lock.yaml .
 COPY tsconfig.json tsconfig.json
 COPY nest-cli.json nest-cli.json
 
+COPY .env.test .env.test
+COPY e2e e2e
 COPY apps/api-gateway apps/api-gateway
 COPY libs libs
 COPY prisma prisma
+
 
 RUN npm install -g pnpm
 RUN pnpm install

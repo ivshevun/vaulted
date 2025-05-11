@@ -5,43 +5,42 @@ services:
       context: .
       dockerfile: ./apps/api-gateway/Dockerfile
     env_file:
-      - apps/api-gateway/.env
+      - apps/api-gateway/.env.test
     ports:
-      - '3001:3001'
+      - '3002:3001'
     volumes:
       - ./apps/api-gateway:/usr/src/app/apps/api-gateway
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
+      - ./e2e:/usr/src/app/e2e
     depends_on:
       postgres:
         condition: service_healthy
+    command: [ "pnpm", "test:e2e:watch" ]
   auth:
     restart: unless-stopped
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
     env_file:
-      - apps/auth/.env
+      - apps/auth/.env.test
     volumes:
       - ./apps/auth:/usr/src/app/apps/auth
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
-    ports:
-      - '3000:3000'
     depends_on:
       postgres:
         condition: service_healthy
   postgres:
     image: postgres:latest
-    container_name: postgres_container
     env_file:
-      - .env
+      - .env.test
+    ports:
+      - '5433:5432'
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "${POSTGRES_PORT}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data/pgdata
+      - pgdata-test:/var/lib/postgresql/data/pgdata
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 30s
@@ -52,5 +51,5 @@ services:
     stdin_open: true
 
 volumes:
-  pgdata:
+  pgdata-test:
     driver: local
