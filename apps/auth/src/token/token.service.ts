@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UserDto } from '@app/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class TokenService {
@@ -21,13 +22,16 @@ export class TokenService {
     return { accessToken, refreshToken };
   }
 
-  verifyToken(token: string) {
+  async verifyToken(token: string) {
     try {
-      return this.jwtService.verifyAsync<UserDto>(token, {
+      return await this.jwtService.verifyAsync<UserDto>(token, {
         secret: this.configService.get('JWT_SECRET'),
       });
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new RpcException({
+        message: 'Invalid refresh token',
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
   }
 

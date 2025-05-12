@@ -8,7 +8,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { v4 as uuid } from 'uuid';
 import { User } from '@prisma/client';
-import { UnauthorizedException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -138,7 +139,10 @@ describe('AuthService', () => {
 
     it('should throw unauthorized if refresh token is invalid', async () => {
       tokenServiceMock.verifyToken.mockImplementation(() => {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          status: HttpStatus.UNAUTHORIZED,
+        });
       });
 
       await expect(service.refresh('bad-token')).rejects.toThrow(

@@ -1,4 +1,12 @@
-import { Body, Controller, Inject, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Inject,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { LoginDto, RegisterDto, RequestWithCookies } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -28,6 +36,7 @@ export class AuthController {
     return { accessToken };
   }
 
+  @HttpCode(200)
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
@@ -42,6 +51,7 @@ export class AuthController {
     return { accessToken };
   }
 
+  @HttpCode(200)
   @Post('refresh')
   async refresh(
     @Req() req: RequestWithCookies,
