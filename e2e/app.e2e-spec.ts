@@ -273,4 +273,19 @@ describe('App (e2e)', () => {
         .expect(401);
     });
   });
+  describe('Logout', () => {
+    it('should remove refresh token from response', async () => {
+      const response = await request(httpServer)
+        .post('/auth/logout')
+        .expect(200);
+
+      const cookies = response.headers['set-cookie'] as unknown as string[];
+
+      const refreshCookie = cookies.find((cookie: string) =>
+        cookie.startsWith('refreshToken='),
+      );
+
+      expect(refreshCookie).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+    });
+  });
 });

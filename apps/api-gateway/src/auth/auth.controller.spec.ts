@@ -137,4 +137,13 @@ describe('AuthController (API Gateway)', () => {
       );
     });
   });
+
+  describe('Logout', () => {
+    it('should call authService.removeRefreshTokenFromResponse', () => {
+      controller.logout(resMock as Response);
+      expect(
+        authServiceMock.removeRefreshTokenFromResponse,
+      ).toHaveBeenCalledWith(resMock);
+    });
+  });
 });

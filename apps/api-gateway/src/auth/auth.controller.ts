@@ -13,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { Tokens } from '@app/common/interfaces';
-import { LoginDocs, RefreshDocs, RegisterDocs } from './docs';
+import { LoginDocs, LogoutDocs, RefreshDocs, RegisterDocs } from './docs';
 
 @Controller('auth')
 export class AuthController {
@@ -72,5 +72,14 @@ export class AuthController {
     this.authService.addRefreshTokenToResponse(res, refreshToken);
 
     return { accessToken };
+  }
+
+  @LogoutDocs()
+  @Post('logout')
+  @HttpCode(200)
+  logout(@Res({ passthrough: true }) res: Response) {
+    this.authService.removeRefreshTokenFromResponse(res);
+
+    return 'Logged out';
   }
 }

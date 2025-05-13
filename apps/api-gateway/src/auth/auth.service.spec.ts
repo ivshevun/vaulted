@@ -17,6 +17,7 @@ describe('AuthService', () => {
     configServiceMock.get.mockReturnValue(mockDays);
     resMock = {
       cookie: jest.fn(),
+      clearCookie: jest.fn(),
       status: jest.fn().mockReturnValue(200),
       send: jest.fn(),
     };
@@ -58,6 +59,12 @@ describe('AuthService', () => {
           secure: true,
         },
       );
+    });
+  });
+  describe('removeRefreshTokenFromResponse', () => {
+    it('should call res.clearCookie with correct params', () => {
+      service.removeRefreshTokenFromResponse(resMock as Response);
+      expect(resMock.clearCookie).toHaveBeenCalledWith('refreshToken');
     });
   });
 });

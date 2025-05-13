@@ -26,4 +26,8 @@ export class AuthService {
       sameSite: 'lax',
     });
   }
+
+  removeRefreshTokenFromResponse(res: Response) {
+    res.clearCookie('refreshToken');
+  }
 }
