@@ -13,6 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { Tokens } from '@app/common/interfaces';
+import { LoginDocs, RefreshDocs, RegisterDocs } from './docs';
 
 @Controller('auth')
 export class AuthController {
@@ -22,6 +23,7 @@ export class AuthController {
     private readonly authService: AuthService,
   ) {}
 
+  @RegisterDocs()
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
@@ -36,6 +38,7 @@ export class AuthController {
     return { accessToken };
   }
 
+  @LoginDocs()
   @HttpCode(200)
   @Post('login')
   async login(
@@ -51,6 +54,7 @@ export class AuthController {
     return { accessToken };
   }
 
+  @RefreshDocs()
   @HttpCode(200)
   @Post('refresh')
   async refresh(
