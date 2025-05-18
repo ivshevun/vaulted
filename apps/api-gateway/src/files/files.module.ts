@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { FilesController } from './files/files.controller';
-import { FilesModule } from './files/files.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import Joi from 'joi';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: Joi.object({
+        AUTH_PORT: Joi.number().required(),
+        FILES_PORT: Joi.number().required(),
+      }),
+    }),
     ClientsModule.registerAsync([
       {
         name: 'auth',
@@ -31,10 +36,6 @@ import { ConfigService } from '@nestjs/config';
         inject: [ConfigService],
       },
     ]),
-    AuthModule,
-    FilesModule,
   ],
-  controllers: [FilesController],
-  providers: [],
 })
-export class ApiGatewayModule {}
+export class FilesModule {}

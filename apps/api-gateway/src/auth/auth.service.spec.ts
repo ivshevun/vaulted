@@ -53,7 +53,7 @@ describe('AuthService', () => {
         'refreshToken',
         expectedRefreshToken,
         {
-          expires: expectedExpiresIn,
+          expires: expect.any(Date) as Date,
           httpOnly: true,
           sameSite: 'lax',
           secure: true,

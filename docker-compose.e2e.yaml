@@ -31,6 +31,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+  files:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./apps/files/Dockerfile
+    env_file:
+      - apps/files/.env
+    volumes:
+      - ./apps/files:/usr/src/app/files/auth
+      - ./libs:/usr/src/app/libs
+      - ./prisma:/usr/src/app/prisma
+    ports:
+      - '3003:3003'
+    depends_on:
+      postgres:
+        condition: service_healthy
   postgres:
     image: postgres:latest
     env_file:

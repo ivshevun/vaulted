@@ -1,11 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { AuthModule } from './auth.module';
-import { ValidationPipe } from '@nestjs/common';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ValidationPipe } from '@nestjs/common';
+import { FilesModule } from './files.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AuthModule);
+  const app = await NestFactory.create(FilesModule);
   const configService = app.get(ConfigService);
 
   app.connectMicroservice<MicroserviceOptions>({
