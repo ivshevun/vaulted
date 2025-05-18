@@ -317,7 +317,7 @@ describe('App (e2e)', () => {
         contentType: 'image/png',
       };
 
-      it('should return an upload url if body is valid and access token is provided', async () => {
+      it('should return an upload url with a key if body is valid and access token is provided', async () => {
         const response = await request(httpServer)
           .get('/files/upload-data')
           .query(query)
@@ -326,8 +326,8 @@ describe('App (e2e)', () => {
           });
         const body = response.body as Record<string, string>;
 
-        console.log({ body });
         expect(body.url).toBeDefined();
+        expect(body.key).toBeDefined();
       });
       it('should return a 403 if no access token provided', async () => {
         await request(httpServer)
