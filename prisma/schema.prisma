@@ -32,6 +32,9 @@ model File {
   key      String
   filename String
 
+  contentType String
+  size        Int
+
   user   User   @relation(fields: [userId], references: [id])
   userId String
 

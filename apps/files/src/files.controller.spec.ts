@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { GetUploadDataPayload } from '@app/common';
+import { ConfirmUploadPayload, GetUploadDataPayload } from '@app/common';
 import { firstValueFrom } from 'rxjs';
 
 describe('FilesController', () => {
@@ -51,6 +51,22 @@ describe('FilesController', () => {
       );
 
       expect(data).toBe(mockResponse);
+    });
+  });
+
+  describe('confirmUpload', () => {
+    const payload: ConfirmUploadPayload = {
+      key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+      filename: 'avatar.png',
+      contentType: 'image/png',
+      userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
+      size: 123,
+    };
+
+    it('should call filesService.confirmUpload', async () => {
+      await controller.confirmUpload(payload);
+
+      expect(filesServiceMock.confirmUpload).toHaveBeenCalledWith(payload);
     });
   });
 });

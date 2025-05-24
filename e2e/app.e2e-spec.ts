@@ -4,7 +4,7 @@ import { ApiGatewayModule } from '../apps/api-gateway/src/api-gateway.module';
 import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { Server } from 'http';
-import { GetUploadDataDto, RegisterDto } from '@app/common';
+import { ConfirmUploadDto, GetUploadDataDto, RegisterDto } from '@app/common';
 import { HttpRpcExceptionInterceptor } from '../apps/api-gateway/src/auth/interceptors';
 import cookieParser from 'cookie-parser';
 
@@ -356,6 +356,130 @@ describe('App (e2e)', () => {
         await request(httpServer)
           .get('/files/upload-data')
           .query(invalidQuery)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          })
+          .expect(400);
+      });
+    });
+
+    describe('confirm-upload', () => {
+      const dto: ConfirmUploadDto = {
+        key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+        filename: 'avatar.png',
+        contentType: 'image/png',
+        size: 123,
+      };
+
+      it('should return a created file if body is valid and access token is provided', async () => {
+        const response = await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(dto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          });
+
+        const body = response.body as Record<string, string>;
+
+        expect(body).toMatchObject({
+          id: expect.any(String) as string,
+          filename: expect.any(String) as string,
+          contentType: expect.any(String) as string,
+          size: expect.any(Number) as number,
+        });
+      });
+      it('should create a file if body is valid and access token is provided', async () => {
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(dto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          });
+
+        const files = await prisma.file.findMany();
+
+        console.log({ files });
+        expect(files.length).toBe(1);
+      });
+      it('should return a 201 if file is created', async () => {
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(dto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          })
+          .expect(201);
+      });
+      it('should return a 403 if no access token provided', async () => {
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(dto)
+          .expect(403);
+      });
+
+      it('should return a 400 if no body provided', async () => {
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          })
+          .expect(400);
+      });
+      it('should return a 400 if no key provided', async () => {
+        const invalidDto = {
+          filename: 'avatar.png',
+          contentType: 'image/png',
+          size: 123,
+        };
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(invalidDto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          })
+          .expect(400);
+      });
+      it('should return a 400 if no filename provided', async () => {
+        const invalidDto = {
+          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+          contentType: 'image/png',
+          size: 123,
+        };
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(invalidDto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          })
+          .expect(400);
+      });
+      it('should return a 400 if no contentType provided', async () => {
+        const invalidDto = {
+          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+          filename: 'avatar.png',
+          size: 123,
+        };
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(invalidDto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          })
+          .expect(400);
+      });
+      it('should return a 400 if no size provided', async () => {
+        const invalidDto = {
+          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+          filename: 'avatar.png',
+          contentType: 'image/png',
+        };
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(invalidDto)
           .set({
             Authorization: `Bearer ${accessToken}`,
           })

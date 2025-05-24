@@ -3,9 +3,11 @@ import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
+import { PrismaModule, PrismaService } from '@app/common';
 
 @Module({
   imports: [
+    PrismaModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
@@ -20,6 +22,6 @@ import Joi from 'joi';
     }),
   ],
   controllers: [FilesController],
-  providers: [FilesService],
+  providers: [FilesService, PrismaService],
 })
 export class FilesModule {}
