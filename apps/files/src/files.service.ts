@@ -1,13 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   ConfirmUploadPayload,
+  GetReadUrlPayload,
   GetUploadDataPayload,
   PrismaService,
 } from '@app/common';
 import { v4 as uuid } from 'uuid';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class FilesService {
@@ -43,9 +49,33 @@ export class FilesService {
     return { url, key: awsKey };
   }
 
-  async confirmUpload(dto: ConfirmUploadPayload) {
+  async confirmUpload(payload: ConfirmUploadPayload) {
     return await this.prismaService.file.create({
-      data: dto,
+      data: payload,
+    });
+  }
+
+  async getReadUrl({ key }: GetReadUrlPayload) {
+    const isFileExists = await this.prismaService.file.findFirst({
+      where: {
+        key,
+      },
+    });
+
+    if (!isFileExists) {
+      throw new RpcException({
+        message: 'File not found',
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    return getSignedUrl(this.s3, command, {
+      expiresIn: 60 * 5,
     });
   }
 }

@@ -1,15 +1,15 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
-  ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
 
 export function ConfirmUploadDocs() {
   return applyDecorators(
     ApiOperation({ summary: 'Confirm file upload' }),
-    ApiOkResponse({
+    ApiCreatedResponse({
       description: 'Get created file data',
       content: {
         'application/json': {

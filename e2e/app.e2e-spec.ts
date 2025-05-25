@@ -398,7 +398,6 @@ describe('App (e2e)', () => {
 
         const files = await prisma.file.findMany();
 
-        console.log({ files });
         expect(files.length).toBe(1);
       });
       it('should return a 201 if file is created', async () => {
@@ -483,6 +482,58 @@ describe('App (e2e)', () => {
           .set({
             Authorization: `Bearer ${accessToken}`,
           })
+          .expect(400);
+      });
+    });
+
+    describe('read-url', () => {
+      let fileKey: string;
+
+      beforeEach(async () => {
+        fileKey =
+          'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620';
+
+        const dto: ConfirmUploadDto = {
+          key: fileKey,
+          filename: 'avatar.png',
+          contentType: 'image/png',
+          size: 123,
+        };
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          })
+          .send(dto);
+      });
+
+      it('should return a url if key is valid', async () => {
+        const response = await request(httpServer)
+          .get('/files/read-url')
+          .set({ Authorization: `Bearer ${accessToken}` })
+          .query({ key: fileKey });
+
+        const body = response.body as Record<string, string>;
+
+        expect(body.url).toBeDefined();
+      });
+      it('should return a 404 if file does not exist', async () => {
+        await request(httpServer)
+          .get('/files/read-url')
+          .set({ Authorization: `Bearer ${accessToken}` })
+          .query({ key: 'file-key' })
+          .expect(404);
+      });
+      it('should return a 403 if no access token provided', async () => {
+        await request(httpServer)
+          .get('/files/read-url')
+          .query({ key: fileKey })
+          .expect(403);
+      });
+      it('should return a 400 if no query provided', async () => {
+        await request(httpServer)
+          .get('/files/read-url')
+          .set({ Authorization: `Bearer ${accessToken}` })
           .expect(400);
       });
     });

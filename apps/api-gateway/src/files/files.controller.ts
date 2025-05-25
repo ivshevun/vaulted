@@ -11,6 +11,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import {
   ConfirmUploadDto,
   ConfirmUploadPayload,
+  GetReadUrlDto,
   GetUploadDataDto,
   GetUploadDataPayload,
   JwtGuard,
@@ -18,7 +19,8 @@ import {
 } from '@app/common';
 import { CurrentUser } from '../decorators';
 import { firstValueFrom } from 'rxjs';
-import { ConfirmUploadDocs, GetUploadDataDocs } from './docs';
+import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
+import { File } from '@prisma/client';
 
 @UseGuards(JwtGuard)
 @Controller('files')
@@ -36,7 +38,10 @@ export class FilesController {
       userId: user.id,
     };
     return await firstValueFrom(
-      this.filesClient.send<string>('get-upload-data', payload),
+      this.filesClient.send<{ url: string; key: string }>(
+        'get-upload-data',
+        payload,
+      ),
     );
   }
 
@@ -52,7 +57,17 @@ export class FilesController {
     };
 
     return await firstValueFrom(
-      this.filesClient.send<string>('confirm-upload', payload),
+      this.filesClient.send<File>('confirm-upload', payload),
     );
+  }
+
+  @GetReadUrlDocs()
+  @Get('read-url')
+  async getReadUrl(@Query() dto: GetReadUrlDto) {
+    const url = await firstValueFrom(
+      this.filesClient.send<string>('get-read-url', dto),
+    );
+
+    return { url };
   }
 }

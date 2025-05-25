@@ -64,4 +64,44 @@ describe('FilesService', () => {
       expect(prismaServiceMock.file.create).toHaveBeenCalled();
     });
   });
+
+  describe('getReadUrl', () => {
+    const mockFile = {
+      id: 'id',
+      key: 'file-key',
+      filename: 'avatar.png',
+      contentType: 'image/png',
+      size: 123,
+      userId: 'user-id',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should return signed upload url for reading purposes', async () => {
+      const mockUrl = 'https://mock-s3-url.com';
+      (getSignedUrl as jest.Mock).mockResolvedValue(mockUrl);
+
+      prismaServiceMock.file.findFirst.mockResolvedValue(mockFile);
+
+      const payload = {
+        key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+      };
+
+      const url = await service.getReadUrl(payload);
+
+      expect(url).toBe(mockUrl);
+    });
+
+    it('should return a 404 rpc exception if file is not found', async () => {
+      prismaServiceMock.file.findFirst.mockResolvedValue(null);
+
+      const payload = {
+        key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+      };
+
+      await expect(service.getReadUrl(payload)).rejects.toThrow(
+        'File not found',
+      );
+    });
+  });
 });

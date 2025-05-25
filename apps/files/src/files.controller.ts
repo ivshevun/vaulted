@@ -1,7 +1,11 @@
 import { Controller } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ConfirmUploadPayload, GetUploadDataPayload } from '@app/common';
+import {
+  ConfirmUploadPayload,
+  GetReadUrlPayload,
+  GetUploadDataPayload,
+} from '@app/common';
 import { of } from 'rxjs';
 
 @Controller()
@@ -16,9 +20,16 @@ export class FilesController {
   }
 
   @MessagePattern('confirm-upload')
-  async confirmUpload(@Payload() uploadData: ConfirmUploadPayload) {
-    const file = await this.filesService.confirmUpload(uploadData);
+  async confirmUpload(@Payload() confirmUploadPayload: ConfirmUploadPayload) {
+    const file = await this.filesService.confirmUpload(confirmUploadPayload);
 
     return of(file);
+  }
+
+  @MessagePattern('get-read-url')
+  async getReadUrl(@Payload() getReadUrlPayload: GetReadUrlPayload) {
+    const url = await this.filesService.getReadUrl(getReadUrlPayload);
+
+    return of(url);
   }
 }

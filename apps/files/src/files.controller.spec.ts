@@ -3,7 +3,11 @@ import { ConfigModule } from '@nestjs/config';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { ConfirmUploadPayload, GetUploadDataPayload } from '@app/common';
+import {
+  ConfirmUploadPayload,
+  GetReadUrlPayload,
+  GetUploadDataPayload,
+} from '@app/common';
 import { firstValueFrom } from 'rxjs';
 
 describe('FilesController', () => {
@@ -67,6 +71,18 @@ describe('FilesController', () => {
       await controller.confirmUpload(payload);
 
       expect(filesServiceMock.confirmUpload).toHaveBeenCalledWith(payload);
+    });
+  });
+
+  describe('getReadUrl', () => {
+    it('should call filesService.getReadUrl', async () => {
+      const payload: GetReadUrlPayload = {
+        key: 'file-key',
+      };
+
+      await controller.getReadUrl(payload);
+
+      expect(filesServiceMock.getReadUrl).toHaveBeenCalledWith(payload);
     });
   });
 });
