@@ -16,7 +16,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: [ "pnpm", "test:e2e:watch" ]
   auth:
     restart: unless-stopped
     build:
