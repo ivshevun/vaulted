@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ValidationPipe } from '@nestjs/common';
 import { FilesModule } from './files.module';
 
 async function bootstrap() {
@@ -9,14 +8,16 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.TCP,
+    transport: Transport.RMQ,
     options: {
-      host: '0.0.0.0',
-      port: configService.get<number>('PORT')!,
+      urls: [configService.get<string>('RABBITMQ_URL')!],
+      queue: 'files_queue',
+      queueOptions: {
+        durable: true,
+      },
     },
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   await app.startAllMicroservices();
 }
 

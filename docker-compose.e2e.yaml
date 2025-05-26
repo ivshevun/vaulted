@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: ./apps/files/Dockerfile
     env_file:
-      - apps/files/.env
+      - apps/files/.env.test
     volumes:
       - ./apps/files:/usr/src/app/files/auth
       - ./libs:/usr/src/app/libs
@@ -68,10 +68,8 @@ services:
     image: rabbitmq:4.1.0-management
     hostname: rabbitmq
     restart: always
-    environment:
-      - RABBITMQ_DEFAULT_USER=rmuser
-      - RABBITMQ_DEFAULT_PASS=rmpassword
-      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit log_levels [{connection,error},{default,error}] disk_free_limit 2147483648
+    env_file:
+      - .env.test
     volumes:
       - rabbitmq:/var/lib/rabbitmq
     ports:

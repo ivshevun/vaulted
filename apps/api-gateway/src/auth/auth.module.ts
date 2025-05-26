@@ -17,10 +17,13 @@ import { AuthService } from './auth.service';
       {
         name: 'auth',
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: 'auth',
-            port: configService.get<number>('AUTH_PORT')!,
+            urls: [configService.get<string>('RABBITMQ_URL')!],
+            queue: 'auth_queue',
+            queueOptions: {
+              durable: true,
+            },
           },
         }),
         inject: [ConfigService],
