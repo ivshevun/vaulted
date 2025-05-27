@@ -37,9 +37,12 @@ lerna-debug.log*
 
 # dotenv environment variable files
 apps/auth/.env
+apps/antivirus/.env
 apps/files/.env.test
 apps/api-gateway/.env.test
 apps/auth/.env.test
+apps/antivirus/.env.test
+
 .env.development.local
 .env.test.local
 .env.production.local

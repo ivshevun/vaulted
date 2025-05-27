@@ -8,6 +8,15 @@
     "tsConfigPath": "apps/auth/tsconfig.app.json"
   },
   "projects": {
+    "antivirus": {
+      "type": "application",
+      "root": "apps/antivirus",
+      "entryFile": "main",
+      "sourceRoot": "apps/antivirus/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/antivirus/tsconfig.app.json"
+      }
+    },
     "api-gateway": {
       "type": "application",
       "root": "apps/api-gateway",
