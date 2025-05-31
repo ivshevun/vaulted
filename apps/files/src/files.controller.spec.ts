@@ -5,8 +5,8 @@ import { FilesService } from './files.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import {
   ConfirmUploadPayload,
-  GetReadUrlPayload,
   GetUploadDataPayload,
+  KeyDto,
 } from '@app/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -76,13 +76,24 @@ describe('FilesController', () => {
 
   describe('getReadUrl', () => {
     it('should call filesService.getReadUrl', async () => {
-      const payload: GetReadUrlPayload = {
+      const payload: KeyDto = {
         key: 'file-key',
       };
 
       await controller.getReadUrl(payload);
 
       expect(filesServiceMock.getReadUrl).toHaveBeenCalledWith(payload);
+    });
+  });
+
+  describe('get-file-stream', () => {
+    it('should call filesService.getFileStream', async () => {
+      const payload: KeyDto = {
+        key: 'file-key',
+      };
+      await controller.getFileStream(payload);
+
+      expect(filesServiceMock.getFileStream).toHaveBeenCalledWith(payload);
     });
   });
 });

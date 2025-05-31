@@ -11,10 +11,10 @@ import { ClientProxy } from '@nestjs/microservices';
 import {
   ConfirmUploadDto,
   ConfirmUploadPayload,
-  GetReadUrlDto,
   GetUploadDataDto,
   GetUploadDataPayload,
   JwtGuard,
+  KeyDto,
   UserDto,
 } from '@app/common';
 import { CurrentUser } from '../decorators';
@@ -63,7 +63,7 @@ export class FilesController {
 
   @GetReadUrlDocs()
   @Get('read-url')
-  async getReadUrl(@Query() dto: GetReadUrlDto) {
+  async getReadUrl(@Query() dto: KeyDto) {
     const url = await firstValueFrom(
       this.filesClient.send<string>('get-read-url', dto),
     );

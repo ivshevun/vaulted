@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class GetReadUrlDto {
+export class KeyDto {
   @ApiProperty({
     description: 'Backend generated file-key',
     example:

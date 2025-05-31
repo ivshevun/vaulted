@@ -1,10 +1,12 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Inject, Injectable } from '@nestjs/common';
+import { S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService, ScanPayload } from '@app/common';
-import { RpcException } from '@nestjs/microservices';
+import { KeyPayload } from '@app/common';
+import { ClientProxy } from '@nestjs/microservices';
 import Nodeclam from 'clamscan';
 import { Readable } from 'stream';
+import { type StreamingBlobPayloadOutputTypes } from '@smithy/types';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AntivirusService {
@@ -12,8 +14,8 @@ export class AntivirusService {
   private readonly bucketName: string;
 
   constructor(
+    @Inject('files') private readonly filesClient: ClientProxy,
     private readonly configService: ConfigService,
-    private readonly prismaService: PrismaService,
   ) {
     this.s3 = new S3Client({
       region: configService.get<string>('AWS_REGION')!,
@@ -26,21 +28,15 @@ export class AntivirusService {
     this.bucketName = configService.get<string>('AWS_S3_BUCKET_NAME')!;
   }
 
-  async scan({ key }: ScanPayload): Promise<any> {
-    const command = new GetObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-    });
+  async scan({ key }: KeyPayload) {
+    const fileStreamBlob = await firstValueFrom(
+      this.filesClient.send<StreamingBlobPayloadOutputTypes>(
+        'get-file-stream',
+        { key },
+      ),
+    );
 
-    const fileObject = await this.s3.send(command);
-    const fileStream = fileObject.Body as Readable;
-
-    if (!fileStream) {
-      throw new RpcException({
-        message: 'File not found',
-        status: HttpStatus.NOT_FOUND,
-      });
-    }
+    const fileStream = fileStreamBlob as Readable;
 
     const clamScan = await new Nodeclam().init({
       removeInfected: true,

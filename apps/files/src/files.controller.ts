@@ -3,8 +3,8 @@ import { FilesService } from './files.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   ConfirmUploadPayload,
-  GetReadUrlPayload,
   GetUploadDataPayload,
+  KeyPayload,
 } from '@app/common';
 import { of } from 'rxjs';
 
@@ -27,9 +27,16 @@ export class FilesController {
   }
 
   @MessagePattern('get-read-url')
-  async getReadUrl(@Payload() getReadUrlPayload: GetReadUrlPayload) {
+  async getReadUrl(@Payload() getReadUrlPayload: KeyPayload) {
     const url = await this.filesService.getReadUrl(getReadUrlPayload);
 
     return of(url);
+  }
+
+  @MessagePattern('get-file-stream')
+  async getFileStream(@Payload() payload: KeyPayload) {
+    const stream = await this.filesService.getFileStream(payload);
+
+    return of(stream);
   }
 }

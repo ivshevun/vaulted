@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AntivirusController } from './antivirus.controller';
 import { AntivirusService } from './antivirus.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
-import { PrismaModule, PrismaService } from '@app/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -18,9 +18,24 @@ import { PrismaModule, PrismaService } from '@app/common';
       }),
       isGlobal: true,
     }),
-    PrismaModule,
+    ClientsModule.registerAsync([
+      {
+        name: 'files',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL')!],
+            queue: 'files_queue',
+            queueOptions: {
+              durable: true,
+            },
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [AntivirusController],
-  providers: [AntivirusService, PrismaService],
+  providers: [AntivirusService],
 })
 export class AntivirusModule {}

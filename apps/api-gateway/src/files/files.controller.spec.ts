@@ -5,9 +5,9 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import {
   ConfirmUploadDto,
   ConfirmUploadPayload,
-  GetReadUrlDto,
   GetUploadDataDto,
   GetUploadDataPayload,
+  KeyDto,
   UserDto,
 } from '@app/common';
 import { of } from 'rxjs';
@@ -133,7 +133,7 @@ describe('FilesController', () => {
   });
 
   describe('get-read-url', () => {
-    let dto: GetReadUrlDto;
+    let dto: KeyDto;
     let mockResponseUrl: string;
 
     beforeEach(() => {

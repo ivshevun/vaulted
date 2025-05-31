@@ -8,12 +8,14 @@ import { ConfigService } from '@nestjs/config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   ConfirmUploadPayload,
-  GetReadUrlPayload,
   GetUploadDataPayload,
+  KeyDto,
+  KeyPayload,
   PrismaService,
 } from '@app/common';
 import { v4 as uuid } from 'uuid';
 import { RpcException } from '@nestjs/microservices';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FilesService {
@@ -55,19 +57,8 @@ export class FilesService {
     });
   }
 
-  async getReadUrl({ key }: GetReadUrlPayload) {
-    const isFileExists = await this.prismaService.file.findFirst({
-      where: {
-        key,
-      },
-    });
-
-    if (!isFileExists) {
-      throw new RpcException({
-        message: 'File not found',
-        status: HttpStatus.NOT_FOUND,
-      });
-    }
+  async getReadUrl({ key }: KeyDto) {
+    await this.isFileExistsOrThrow({ key });
 
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
@@ -77,5 +68,32 @@ export class FilesService {
     return getSignedUrl(this.s3, command, {
       expiresIn: 60 * 5,
     });
+  }
+
+  async getFileStream({ key }: KeyPayload) {
+    await this.isFileExistsOrThrow({ key });
+
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    const fileObject = await this.s3.send(command);
+    return fileObject.Body;
+  }
+
+  private async isFileExistsOrThrow(filter: Prisma.FileWhereInput) {
+    const isFileExists = await this.prismaService.file.findFirst({
+      where: filter,
+    });
+
+    if (!isFileExists) {
+      throw new RpcException({
+        message: 'File not found',
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    return true;
   }
 }
