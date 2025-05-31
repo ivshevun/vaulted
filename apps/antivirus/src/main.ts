@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AntivirusModule } from './antivirus.module';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { MicroserviceExceptionFilter } from '@app/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AntivirusModule);
@@ -17,6 +18,8 @@ async function bootstrap() {
       },
     },
   });
+
+  app.useGlobalFilters(new MicroserviceExceptionFilter());
 
   await app.startAllMicroservices();
 }

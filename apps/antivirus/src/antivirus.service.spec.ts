@@ -6,6 +6,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Readable } from 'stream';
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { of } from 'rxjs';
+import { KeyPayload } from '@app/common';
 
 const mockScanStream = jest.fn();
 
@@ -39,6 +40,10 @@ describe('AntivirusService', () => {
   });
 
   describe('scan', () => {
+    const payload: KeyPayload = {
+      key: 'file-key',
+    };
+
     beforeEach(() => {
       const mockUrl = 'image-url';
       const stream = new Readable();
@@ -52,16 +57,25 @@ describe('AntivirusService', () => {
     it('should return true if file is infected', async () => {
       mockScanStream.mockResolvedValue({ isInfected: true });
 
-      const result = await service.scan({ key: 'file-key' });
+      const result = await service.scan(payload);
 
       expect(result.isInfected).toBeTruthy();
     });
     it('should return false if file is not infected', async () => {
       mockScanStream.mockResolvedValue({ isInfected: false });
 
-      const result = await service.scan({ key: 'file-key' });
+      const result = await service.scan(payload);
 
       expect(result.isInfected).toBeFalsy();
+    });
+
+    it('should call filesClient.send with "get-file-stream" and key passed', async () => {
+      await service.scan(payload);
+
+      expect(filesProxyMock.send).toHaveBeenCalledWith(
+        'get-file-stream',
+        payload,
+      );
     });
   });
 });
