@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { FilesService } from './files.service';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import {
   ConfirmUploadPayload,
   GetUploadDataPayload,
@@ -38,5 +38,10 @@ export class FilesController {
     const stream = await this.filesService.getFileStream(payload);
 
     return of(stream);
+  }
+
+  @EventPattern('on-infected')
+  async onInfected(@Payload() payload: KeyPayload) {
+    await this.filesService.onInfected(payload);
   }
 }

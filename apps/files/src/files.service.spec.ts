@@ -9,9 +9,15 @@ import {
 } from '@app/common';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { Readable } from 'stream';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
+import { ClientProxy } from '@nestjs/microservices';
+import * as matchers from 'aws-sdk-client-mock-jest';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
@@ -21,6 +27,7 @@ describe('FilesService', () => {
   let service: FilesService;
   let prismaServiceMock: DeepMockProxy<PrismaService>;
   let s3Mock: AwsClientStub<S3Client>;
+  let antivirusProxyMock: DeepMockProxy<ClientProxy>;
 
   const mockFile = {
     id: 'id',
@@ -35,13 +42,17 @@ describe('FilesService', () => {
 
   beforeEach(async () => {
     prismaServiceMock = mockDeep();
+    antivirusProxyMock = mockDeep();
     s3Mock = mockClient(S3Client);
+
+    expect.extend(matchers);
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [await ConfigModule.forRoot({ isGlobal: true })],
       providers: [
         FilesService,
         { provide: PrismaService, useValue: prismaServiceMock },
+        { provide: 'antivirus', useValue: antivirusProxyMock },
       ],
     }).compile();
 
@@ -132,5 +143,21 @@ describe('FilesService', () => {
         'File not found',
       );
     });
+  });
+
+  describe('onFileScanned', () => {
+    it('should call s3.send with DeleteObjectCommand', async () => {
+      await service.onInfected({ key: 'file-key' });
+
+      expect(s3Mock).toHaveReceivedCommand(DeleteObjectCommand);
+    });
+    it('should call prisma.file.delete', async () => {
+      await service.onInfected({ key: 'file-key' });
+
+      expect(prismaServiceMock.file.delete).toHaveBeenCalled();
+    });
+    it.todo(
+      'should call notificationsClient.send with "notify-infected" and correct payload',
+    );
   });
 });

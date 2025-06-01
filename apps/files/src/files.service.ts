@@ -1,5 +1,6 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -14,7 +15,7 @@ import {
   PrismaService,
 } from '@app/common';
 import { v4 as uuid } from 'uuid';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -23,6 +24,7 @@ export class FilesService {
   private readonly bucketName: string;
 
   constructor(
+    @Inject('antivirus') private readonly antivirusClient: ClientProxy,
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
   ) {
@@ -52,6 +54,8 @@ export class FilesService {
   }
 
   async confirmUpload(payload: ConfirmUploadPayload) {
+    this.antivirusClient.emit('scan', { key: payload.key });
+
     return await this.prismaService.file.create({
       data: payload,
     });
@@ -80,6 +84,22 @@ export class FilesService {
 
     const fileObject = await this.s3.send(command);
     return fileObject.Body;
+  }
+
+  async onInfected({ key }: KeyPayload) {
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+    await this.s3.send(command);
+
+    await this.prismaService.file.delete({
+      where: {
+        key: key,
+      },
+    });
+
+    // TODO: notify user that his file was infected and was deleted
   }
 
   private async isFileExistsOrThrow(filter: Prisma.FileWhereInput) {
