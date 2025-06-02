@@ -12,6 +12,7 @@ import { Readable } from 'stream';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { sdkStreamMixin } from '@smithy/util-stream';
@@ -79,15 +80,32 @@ describe('FilesService', () => {
   });
 
   describe('confirmUpload', () => {
+    const payload: ConfirmUploadPayload = {
+      key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+      filename: 'avatar.png',
+      contentType: 'image/png',
+      userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
+      size: 123,
+    };
+
+    it('should throw a 404 if object is not in the bucket', async () => {
+      s3Mock.on(HeadObjectCommand).rejects(new Error('File not found'));
+
+      await expect(service.confirmUpload(payload)).rejects.toThrow(
+        'File not found',
+      );
+    });
+
+    it('should send a request for scanning a file', async () => {
+      await service.confirmUpload(payload);
+
+      expect(antivirusProxyMock.emit).toHaveBeenCalledWith('scan', {
+        key: payload.key,
+      });
+    });
+
     it('should call prismaService.file.create', async () => {
-      const dto: ConfirmUploadPayload = {
-        key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-        filename: 'avatar.png',
-        contentType: 'image/png',
-        userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
-        size: 123,
-      };
-      await service.confirmUpload(dto);
+      await service.confirmUpload(payload);
 
       expect(prismaServiceMock.file.create).toHaveBeenCalled();
     });
@@ -110,7 +128,7 @@ describe('FilesService', () => {
     });
 
     it('should return a 404 rpc exception if file is not found', async () => {
-      prismaServiceMock.file.findFirst.mockResolvedValue(null);
+      s3Mock.on(HeadObjectCommand).rejects(new Error('File not found'));
 
       const payload = {
         key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
@@ -139,6 +157,8 @@ describe('FilesService', () => {
       expect(await result?.transformToString()).toBe(mockUrl);
     });
     it('should throw a 404 if file key is invalid', async () => {
+      s3Mock.on(HeadObjectCommand).rejects(new Error('File not found'));
+
       await expect(service.getFileStream({ key: 'file-key' })).rejects.toThrow(
         'File not found',
       );

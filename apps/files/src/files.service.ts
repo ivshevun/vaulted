@@ -2,6 +2,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -16,7 +17,6 @@ import {
 } from '@app/common';
 import { v4 as uuid } from 'uuid';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FilesService {
@@ -54,6 +54,8 @@ export class FilesService {
   }
 
   async confirmUpload(payload: ConfirmUploadPayload) {
+    await this.isObjectExistsOrThrow({ key: payload.key });
+
     this.antivirusClient.emit('scan', { key: payload.key });
 
     return await this.prismaService.file.create({
@@ -62,7 +64,7 @@ export class FilesService {
   }
 
   async getReadUrl({ key }: KeyDto) {
-    await this.isFileExistsOrThrow({ key });
+    await this.isObjectExistsOrThrow({ key });
 
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
@@ -75,7 +77,7 @@ export class FilesService {
   }
 
   async getFileStream({ key }: KeyPayload) {
-    await this.isFileExistsOrThrow({ key });
+    await this.isObjectExistsOrThrow({ key });
 
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
@@ -102,18 +104,21 @@ export class FilesService {
     // TODO: notify user that his file was infected and was deleted
   }
 
-  private async isFileExistsOrThrow(filter: Prisma.FileWhereInput) {
-    const isFileExists = await this.prismaService.file.findFirst({
-      where: filter,
-    });
+  private async isObjectExistsOrThrow({ key }: KeyPayload) {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
 
-    if (!isFileExists) {
+      await this.s3.send(command);
+
+      return true;
+    } catch {
       throw new RpcException({
         message: 'File not found',
         status: HttpStatus.NOT_FOUND,
       });
     }
-
-    return true;
   }
 }
