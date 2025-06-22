@@ -86,9 +86,9 @@ services:
       - pgdata:/var/lib/postgresql/data/pgdata
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped
     tty: true
     stdin_open: true
@@ -105,8 +105,8 @@ services:
       - "5672:5672"
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 10s
-      timeout: 5s
+      interval: 5s
+      timeout: 3s
       retries: 3
   clamav:
     image: mkodockx/docker-clamav:alpine
@@ -116,8 +116,8 @@ services:
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "clamdscan", "--version" ]
-      interval: 30s
-      timeout: 10s
+      interval: 5s
+      timeout: 3s
       retries: 3
 
 volumes:
