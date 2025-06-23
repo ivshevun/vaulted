@@ -54,6 +54,7 @@ export class FilesService {
   }
 
   async confirmUpload(payload: ConfirmUploadPayload) {
+    console.log('confirming upload... 123');
     await this.isObjectExistsOrThrow({ key: payload.key });
 
     this.antivirusClient.emit('scan', { key: payload.key });
@@ -85,7 +86,9 @@ export class FilesService {
     });
 
     const fileObject = await this.s3.send(command);
-    return fileObject.Body;
+
+    console.log({ fileObject });
+    return true;
   }
 
   async onInfected({ key }: KeyPayload) {
@@ -106,6 +109,7 @@ export class FilesService {
 
   private async isObjectExistsOrThrow({ key }: KeyPayload) {
     try {
+      console.log({ key });
       const command = new HeadObjectCommand({
         Bucket: this.bucketName,
         Key: key,
@@ -114,7 +118,8 @@ export class FilesService {
       await this.s3.send(command);
 
       return true;
-    } catch {
+    } catch (err) {
+      console.log({ err });
       throw new RpcException({
         message: 'File not found',
         status: HttpStatus.NOT_FOUND,

@@ -1,13 +1,17 @@
 import { INestApplication } from '@nestjs/common';
 import { Server } from 'http';
 import { PrismaClient } from '@prisma/client';
-import { setupE2e } from '../utils';
+import { setupE2e, uploadFileToS3 } from '../utils';
 import request from 'supertest';
-import { ConfirmUploadDto, GetUploadDataDto } from '@app/common';
+import { ConfirmUploadDto, GetUploadDataDto, UserDto } from '@app/common';
+import { decode } from 'jsonwebtoken';
+import { ConfigService } from '@nestjs/config';
 
 describe('Files e2e', () => {
   let app: INestApplication;
   let httpServer: Server;
+  let configService: ConfigService;
+
   const prisma = new PrismaClient();
 
   beforeAll(async () => {
@@ -15,6 +19,7 @@ describe('Files e2e', () => {
 
     app = setup.app;
     httpServer = setup.httpServer;
+    configService = app.get(ConfigService);
   });
 
   afterAll(async () => {
@@ -102,6 +107,9 @@ describe('Files e2e', () => {
       };
 
       it('should return a created file if body is valid and access token is provided', async () => {
+        const userDto = decode(accessToken) as UserDto;
+        dto.key = await uploadFileToS3(configService, userDto.id);
+
         const response = await request(httpServer)
           .post('/files/confirm-upload')
           .send(dto)

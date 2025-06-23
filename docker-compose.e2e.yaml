@@ -9,7 +9,7 @@ services:
     ports:
       - '3002:3001'
     volumes:
-      - ./apps/api-gateway:/usr/src/app/apps/api-gateway
+      - ./apps:/usr/src/app/apps
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
       - ./e2e:/usr/src/app/e2e
@@ -46,7 +46,7 @@ services:
     env_file:
       - apps/files/.env.test
     volumes:
-      - ./apps/files:/usr/src/app/files/auth
+      - ./apps/files:/usr/src/app/apps/files
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
     depends_on:
