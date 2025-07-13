@@ -1,12 +1,12 @@
-import { Controller } from '@nestjs/common';
-import { FilesService } from './files.service';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import {
   ConfirmUploadPayload,
   GetUploadDataPayload,
   KeyPayload,
 } from '@app/common';
+import { Controller } from '@nestjs/common';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { of } from 'rxjs';
+import { FilesService } from './files.service';
 
 @Controller()
 export class FilesController {
@@ -31,13 +31,6 @@ export class FilesController {
     const url = await this.filesService.getReadUrl(getReadUrlPayload);
 
     return of(url);
-  }
-
-  @MessagePattern('get-file-stream')
-  async getFileStream(@Payload() payload: KeyPayload) {
-    const stream = await this.filesService.getFileStream(payload);
-
-    return of(stream);
   }
 
   @EventPattern('on-infected')

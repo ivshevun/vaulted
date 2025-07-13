@@ -1,12 +1,15 @@
-import { AntivirusService } from './antivirus.service';
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { ClientProxy } from '@nestjs/microservices';
-import { Readable } from 'stream';
-import { sdkStreamMixin } from '@smithy/util-stream';
-import { of } from 'rxjs';
 import { KeyPayload } from '@app/common';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { ConfigModule } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
+import { Test, TestingModule } from '@nestjs/testing';
+import { sdkStreamMixin } from '@smithy/util-stream';
+import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
+import * as matchers from 'aws-sdk-client-mock-jest';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { of } from 'rxjs';
+import { Readable } from 'stream';
+import { AntivirusService } from './antivirus.service';
 
 const mockScanStream = jest.fn();
 
@@ -21,9 +24,13 @@ jest.mock('clamscan', () => {
 describe('AntivirusService', () => {
   let service: AntivirusService;
   let filesProxyMock: DeepMockProxy<ClientProxy>;
+  let s3Mock: AwsClientStub<S3Client>;
 
   beforeEach(async () => {
     filesProxyMock = mockDeep();
+    s3Mock = mockClient(S3Client);
+
+    expect.extend(matchers);
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [await ConfigModule.forRoot({ isGlobal: true })],
@@ -52,21 +59,12 @@ describe('AntivirusService', () => {
 
       const sdkStream = sdkStreamMixin(stream);
       filesProxyMock.send.mockReturnValue(of(sdkStream));
-    });
-
-    it('should call filesClient.send with "get-file-stream" and key passed', async () => {
-      mockScanStream.mockResolvedValue({ isInfected: true });
-
-      await service.scan(payload);
-
-      expect(filesProxyMock.send).toHaveBeenCalledWith(
-        'get-file-stream',
-        payload,
-      );
+      s3Mock.on(GetObjectCommand).resolves({ Body: sdkStream });
     });
 
     it('should call filesClient.emit with "on-infected and key passed if file is infected"', async () => {
       mockScanStream.mockResolvedValue({ isInfected: true });
+
       await service.scan(payload);
 
       expect(filesProxyMock.emit).toHaveBeenCalledWith('on-infected', payload);

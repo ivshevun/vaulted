@@ -5,7 +5,6 @@ import {
 } from '@app/common';
 import {
   DeleteObjectCommand,
-  GetObjectCommand,
   HeadObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -13,11 +12,9 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ConfigModule } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
-import { sdkStreamMixin } from '@smithy/util-stream';
 import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
 import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { Readable } from 'stream';
 import { FilesService } from './files.service';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
@@ -154,31 +151,6 @@ describe('FilesService', () => {
       };
 
       await expect(service.getReadUrl(payload)).rejects.toThrow(
-        'File not found',
-      );
-    });
-  });
-
-  describe('getFileStream', () => {
-    it('should return file stream', async () => {
-      const mockUrl = 'image-url';
-      const stream = new Readable();
-      stream.push(mockUrl);
-      stream.push(null);
-
-      const sdkStream = sdkStreamMixin(stream);
-      s3Mock.on(GetObjectCommand).resolves({ Body: sdkStream });
-
-      prismaServiceMock.file.findFirst.mockResolvedValue(mockFile);
-
-      const result = await service.getFileStream({ key: 'file-key' });
-
-      expect(await result?.transformToString()).toBe(mockUrl);
-    });
-    it('should throw a 404 if file key is invalid', async () => {
-      s3Mock.on(HeadObjectCommand).rejects(new Error('File not found'));
-
-      await expect(service.getFileStream({ key: 'file-key' })).rejects.toThrow(
         'File not found',
       );
     });

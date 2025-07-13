@@ -84,15 +84,4 @@ describe('FilesController', () => {
       expect(filesServiceMock.getReadUrl).toHaveBeenCalledWith(payload);
     });
   });
-
-  describe('get-file-stream', () => {
-    it('should call filesService.getFileStream', async () => {
-      const payload: KeyDto = {
-        key: 'file-key',
-      };
-      await controller.getFileStream(payload);
-
-      expect(filesServiceMock.getFileStream).toHaveBeenCalledWith(payload);
-    });
-  });
 });
