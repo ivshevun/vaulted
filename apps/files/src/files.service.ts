@@ -1,13 +1,3 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
-import { ConfigService } from '@nestjs/config';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   ConfirmUploadPayload,
   GetUploadDataPayload,
@@ -15,8 +5,19 @@ import {
   KeyPayload,
   PrismaService,
 } from '@app/common';
-import { v4 as uuid } from 'uuid';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { v4 as uuid } from 'uuid';
+import { getFileSize } from './utils';
 
 @Injectable()
 export class FilesService {
@@ -59,8 +60,13 @@ export class FilesService {
 
     this.antivirusClient.emit('scan', { key: payload.key });
 
+    const fileSize = await getFileSize(this.s3, this.bucketName, payload.key);
+
     return await this.prismaService.file.create({
-      data: payload,
+      data: {
+        ...payload,
+        size: fileSize,
+      },
     });
   }
 
@@ -109,7 +115,6 @@ export class FilesService {
 
   private async isObjectExistsOrThrow({ key }: KeyPayload) {
     try {
-      console.log({ key });
       const command = new HeadObjectCommand({
         Bucket: this.bucketName,
         Key: key,
@@ -118,8 +123,7 @@ export class FilesService {
       await this.s3.send(command);
 
       return true;
-    } catch (err) {
-      console.log({ err });
+    } catch {
       throw new RpcException({
         message: 'File not found',
         status: HttpStatus.NOT_FOUND,

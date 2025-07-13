@@ -104,7 +104,6 @@ describe('Files e2e', () => {
           key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
           filename: 'avatar.png',
           contentType: 'image/png',
-          size: 123,
         };
 
         dto.key = await uploadFileToS3(configService, 'user-id');
@@ -208,21 +207,6 @@ describe('Files e2e', () => {
           })
           .expect(400);
       });
-      it('should return a 400 if no size provided', async () => {
-        const invalidDto = {
-          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-          filename: 'avatar.png',
-          contentType: 'image/png',
-        };
-
-        await request(httpServer)
-          .post('/files/confirm-upload')
-          .send(invalidDto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          })
-          .expect(400);
-      });
     });
 
     describe('read-url', () => {
@@ -235,7 +219,6 @@ describe('Files e2e', () => {
           key: fileKey,
           filename: 'avatar.png',
           contentType: 'image/png',
-          size: 123,
         };
 
         await request(httpServer)
