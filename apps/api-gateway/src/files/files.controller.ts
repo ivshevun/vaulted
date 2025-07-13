@@ -1,4 +1,13 @@
 import {
+  ConfirmUploadDto,
+  ConfirmUploadPayload,
+  GetUploadDataDto,
+  GetUploadDataPayload,
+  JwtGuard,
+  KeyDto,
+  UserDto,
+} from '@app/common';
+import {
   Body,
   Controller,
   Get,
@@ -8,19 +17,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import {
-  ConfirmUploadDto,
-  ConfirmUploadPayload,
-  GetUploadDataDto,
-  GetUploadDataPayload,
-  JwtGuard,
-  KeyDto,
-  UserDto,
-} from '@app/common';
-import { CurrentUser } from '../decorators';
-import { firstValueFrom } from 'rxjs';
-import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
 import { File } from '@prisma/client';
+import { firstValueFrom } from 'rxjs';
+import { CurrentUser } from '../decorators';
+import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
 
 @UseGuards(JwtGuard)
 @Controller('files')

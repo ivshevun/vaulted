@@ -1,24 +1,24 @@
-import { FilesService } from './files.service';
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   ConfirmUploadPayload,
   GetUploadDataPayload,
   PrismaService,
 } from '@app/common';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { Readable } from 'stream';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { ConfigModule } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
+import { Test, TestingModule } from '@nestjs/testing';
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
-import { ClientProxy } from '@nestjs/microservices';
 import * as matchers from 'aws-sdk-client-mock-jest';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { Readable } from 'stream';
+import { FilesService } from './files.service';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
@@ -85,7 +85,6 @@ describe('FilesService', () => {
       filename: 'avatar.png',
       contentType: 'image/png',
       userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
-      size: 123,
     };
 
     it('should throw a 404 if object is not in the bucket', async () => {
@@ -97,6 +96,10 @@ describe('FilesService', () => {
     });
 
     it('should send a request for scanning a file', async () => {
+      s3Mock.on(HeadObjectCommand).resolves({
+        ContentLength: 1000,
+      });
+
       await service.confirmUpload(payload);
 
       expect(antivirusProxyMock.emit).toHaveBeenCalledWith('scan', {
@@ -105,9 +108,25 @@ describe('FilesService', () => {
     });
 
     it('should call prismaService.file.create', async () => {
+      s3Mock.on(HeadObjectCommand).resolves({
+        ContentLength: 1000,
+      });
+
       await service.confirmUpload(payload);
 
       expect(prismaServiceMock.file.create).toHaveBeenCalled();
+    });
+
+    it('should get fileSize by calling s3.HeadObjectCommand', async () => {
+      s3Mock.on(HeadObjectCommand).resolves({
+        ContentLength: 1000,
+      });
+
+      await service.confirmUpload(payload);
+
+      expect(
+        s3Mock.commandCalls(HeadObjectCommand).length,
+      ).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -165,7 +184,7 @@ describe('FilesService', () => {
     });
   });
 
-  describe('onFileScanned', () => {
+  describe('onInfected', () => {
     it('should call s3.send with DeleteObjectCommand', async () => {
       await service.onInfected({ key: 'file-key' });
 

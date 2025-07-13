@@ -1,14 +1,14 @@
-import { Test } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
-import { FilesController } from './files.controller';
-import { FilesService } from './files.service';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import {
   ConfirmUploadPayload,
   GetUploadDataPayload,
   KeyDto,
 } from '@app/common';
+import { ConfigModule } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { firstValueFrom } from 'rxjs';
+import { FilesController } from './files.controller';
+import { FilesService } from './files.service';
 
 describe('FilesController', () => {
   let controller: FilesController;
@@ -64,7 +64,6 @@ describe('FilesController', () => {
       filename: 'avatar.png',
       contentType: 'image/png',
       userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
-      size: 123,
     };
 
     it('should call filesService.confirmUpload', async () => {

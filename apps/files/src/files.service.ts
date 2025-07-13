@@ -1,5 +1,6 @@
 import {
   ConfirmUploadPayload,
+  createS3Client,
   GetUploadDataPayload,
   KeyDto,
   KeyPayload,
@@ -29,13 +30,7 @@ export class FilesService {
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
   ) {
-    this.s3 = new S3Client({
-      region: configService.get<string>('AWS_REGION')!,
-      credentials: {
-        accessKeyId: configService.get<string>('AWS_ACCESS_ID')!,
-        secretAccessKey: configService.get<string>('AWS_SECRET_ACCESS_KEY')!,
-      },
-    });
+    this.s3 = createS3Client(configService);
 
     this.bucketName = configService.get<string>('AWS_S3_BUCKET_NAME')!;
   }
@@ -55,7 +50,6 @@ export class FilesService {
   }
 
   async confirmUpload(payload: ConfirmUploadPayload) {
-    console.log('confirming upload... 123');
     await this.isObjectExistsOrThrow({ key: payload.key });
 
     this.antivirusClient.emit('scan', { key: payload.key });
@@ -81,20 +75,6 @@ export class FilesService {
     return getSignedUrl(this.s3, command, {
       expiresIn: 60 * 5,
     });
-  }
-
-  async getFileStream({ key }: KeyPayload) {
-    await this.isObjectExistsOrThrow({ key });
-
-    const command = new GetObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-    });
-
-    const fileObject = await this.s3.send(command);
-
-    console.log({ fileObject });
-    return true;
   }
 
   async onInfected({ key }: KeyPayload) {

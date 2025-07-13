@@ -1,14 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { KeyPayload } from '@app/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import Nodeclam from 'clamscan';
 import { Readable } from 'stream';
-import { type StreamingBlobPayloadOutputTypes } from '@smithy/types';
-import { firstValueFrom } from 'rxjs';
+import { getFileStream } from './utils';
 
 @Injectable()
 export class AntivirusService {
-  constructor(@Inject('files') private readonly filesClient: ClientProxy) {}
+  constructor(
+    @Inject('files') private readonly filesClient: ClientProxy,
+    private readonly configService: ConfigService,
+  ) {}
 
   async scan({ key }: KeyPayload) {
     const fileStream = await this.getFileStream(key);
@@ -23,14 +26,9 @@ export class AntivirusService {
   }
 
   private async getFileStream(key: string) {
-    const fileStreamBlob = await firstValueFrom(
-      this.filesClient.send<StreamingBlobPayloadOutputTypes>(
-        'get-file-stream',
-        { key },
-      ),
-    );
+    const fileStream = await getFileStream(this.configService, key);
 
-    return fileStreamBlob as Readable;
+    return fileStream as Readable;
   }
 
   private async initClamScan() {

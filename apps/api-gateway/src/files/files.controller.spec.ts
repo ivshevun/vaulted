@@ -1,7 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { FilesController } from './files.controller';
-import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
 import {
   ConfirmUploadDto,
   ConfirmUploadPayload,
@@ -10,9 +6,13 @@ import {
   KeyDto,
   UserDto,
 } from '@app/common';
-import { of } from 'rxjs';
-import { File } from '@prisma/client';
 import { HttpStatus } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { Test, TestingModule } from '@nestjs/testing';
+import { File } from '@prisma/client';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { of } from 'rxjs';
+import { FilesController } from './files.controller';
 
 describe('FilesController', () => {
   let controller: FilesController;
@@ -95,7 +95,6 @@ describe('FilesController', () => {
         filename: 'avatar.png',
         contentType: 'image/png',
         key: 'file-key',
-        size: 123,
       };
       payload = {
         ...dto,
