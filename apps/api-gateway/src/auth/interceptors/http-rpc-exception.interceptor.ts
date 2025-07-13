@@ -14,6 +14,10 @@ export class HttpRpcExceptionInterceptor implements NestInterceptor {
     return next.handle().pipe(
       catchError((err) => {
         if (isHttpError(err)) {
+          if (typeof err.status !== 'number') {
+            err.status = 500;
+          }
+
           return throwError(() => new HttpException(err.message, err.status));
         }
 

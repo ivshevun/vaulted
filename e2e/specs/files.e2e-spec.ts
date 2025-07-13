@@ -1,11 +1,10 @@
+import { ConfirmUploadDto, GetUploadDataDto } from '@app/common';
 import { INestApplication } from '@nestjs/common';
-import { Server } from 'http';
-import { PrismaClient } from '@prisma/client';
-import { setupE2e, uploadFileToS3 } from '../utils';
-import request from 'supertest';
-import { ConfirmUploadDto, GetUploadDataDto, UserDto } from '@app/common';
-import { decode } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
+import { PrismaClient } from '@prisma/client';
+import { Server } from 'http';
+import request from 'supertest';
+import { setupE2e, uploadFileToS3 } from '../utils';
 
 describe('Files e2e', () => {
   let app: INestApplication;
@@ -99,17 +98,19 @@ describe('Files e2e', () => {
     });
 
     describe('confirm-upload', () => {
-      const dto: ConfirmUploadDto = {
-        key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-        filename: 'avatar.png',
-        contentType: 'image/png',
-        size: 123,
-      };
+      let dto: ConfirmUploadDto;
+      beforeAll(async () => {
+        dto = {
+          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+          filename: 'avatar.png',
+          contentType: 'image/png',
+          size: 123,
+        };
+
+        dto.key = await uploadFileToS3(configService, 'user-id');
+      });
 
       it('should return a created file if body is valid and access token is provided', async () => {
-        const userDto = decode(accessToken) as UserDto;
-        dto.key = await uploadFileToS3(configService, userDto.id);
-
         const response = await request(httpServer)
           .post('/files/confirm-upload')
           .send(dto)
@@ -228,8 +229,7 @@ describe('Files e2e', () => {
       let fileKey: string;
 
       beforeEach(async () => {
-        fileKey =
-          'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620';
+        fileKey = await uploadFileToS3(configService, 'user-id');
 
         const dto: ConfirmUploadDto = {
           key: fileKey,
@@ -237,6 +237,7 @@ describe('Files e2e', () => {
           contentType: 'image/png',
           size: 123,
         };
+
         await request(httpServer)
           .post('/files/confirm-upload')
           .set({

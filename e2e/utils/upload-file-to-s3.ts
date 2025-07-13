@@ -1,13 +1,15 @@
-import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { v4 as uuid } from 'uuid';
+import { ConfigService } from '@nestjs/config';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { v4 as uuid } from 'uuid';
 
 export async function uploadFileToS3(
   configService: ConfigService,
   userId: string,
 ) {
+  console.log('upload started!');
+
   // create s3 client
   console.log({ region: configService.get<string>('AWS_REGION')! });
   const s3 = new S3Client({
