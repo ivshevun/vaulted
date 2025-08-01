@@ -7,11 +7,9 @@ import { v4 as uuid } from 'uuid';
 export async function uploadFileToS3(
   configService: ConfigService,
   userId: string,
+  isInfected = false,
 ) {
-  console.log('upload started!');
-
   // create s3 client
-  console.log({ region: configService.get<string>('AWS_REGION')! });
   const s3 = new S3Client({
     region: configService.get<string>('AWS_REGION')!,
     credentials: {
@@ -20,15 +18,18 @@ export async function uploadFileToS3(
     },
   });
   const bucketName = configService.get<string>('AWS_S3_BUCKET_NAME');
-  console.log({ bucketName });
 
   // generate aws fileKey
   const fileKey = `${userId}/${uuid()}`;
 
+  const normalFilePath = '../fixtures/avatar.png';
+  const infectedFilePath = '../fixtures/eicar.txt';
+
+  const currentFilePath = isInfected ? infectedFilePath : normalFilePath;
+
   // upload file to aws using s3 put command
-  const filePath = path.resolve(__dirname, '../fixtures/avatar.png');
+  const filePath = path.resolve(__dirname, currentFilePath);
   const file = await fs.readFile(filePath);
-  console.log({ file });
 
   const command = new PutObjectCommand({
     Key: fileKey,
@@ -38,6 +39,5 @@ export async function uploadFileToS3(
 
   await s3.send(command);
 
-  console.log({ correctKey: fileKey });
   return fileKey;
 }

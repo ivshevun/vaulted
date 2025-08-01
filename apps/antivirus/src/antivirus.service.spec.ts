@@ -62,12 +62,12 @@ describe('AntivirusService', () => {
       s3Mock.on(GetObjectCommand).resolves({ Body: sdkStream });
     });
 
-    it('should call filesClient.emit with "on-infected and key passed if file is infected"', async () => {
+    it('should return true if file is infected', async () => {
       mockScanStream.mockResolvedValue({ isInfected: true });
 
-      await service.scan(payload);
+      const result = await service.scan(payload);
 
-      expect(filesProxyMock.emit).toHaveBeenCalledWith('on-infected', payload);
+      expect(result).toBe(true);
     });
   });
 });

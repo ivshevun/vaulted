@@ -1,4 +1,9 @@
-import { ConfirmUploadDto, GetUploadDataDto } from '@app/common';
+import {
+  ConfirmUploadDto,
+  createS3Client,
+  GetUploadDataDto,
+} from '@app/common';
+import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
@@ -138,6 +143,51 @@ describe('Files e2e', () => {
 
         expect(files.length).toBe(1);
       });
+      it('should delete a file from db if file is infected', async () => {
+        const dto: ConfirmUploadDto = {
+          key: await uploadFileToS3(configService, 'user-id', true),
+          filename: 'eicar.txt',
+          contentType: 'text/plain',
+        };
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(dto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          });
+
+        const file = await prisma.file.findUnique({
+          where: {
+            key: dto.key,
+          },
+        });
+
+        expect(file).toBeNull();
+      });
+      it('should delete file from aws if file was infected', async () => {
+        const dto: ConfirmUploadDto = {
+          key: await uploadFileToS3(configService, 'user-id', true),
+          filename: 'eicar.txt',
+          contentType: 'text/plain',
+        };
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send(dto)
+          .set({
+            Authorization: `Bearer ${accessToken}`,
+          });
+
+        const s3 = createS3Client(configService);
+
+        const command = new HeadObjectCommand({
+          Bucket: configService.get<string>('AWS_S3_BUCKET_NAME')!,
+          Key: dto.key,
+        });
+
+        await expect(s3.send(command)).rejects.toThrow(Error);
+      });
       it('should return a 201 if file is created', async () => {
         await request(httpServer)
           .post('/files/confirm-upload')
@@ -166,7 +216,6 @@ describe('Files e2e', () => {
         const invalidDto = {
           filename: 'avatar.png',
           contentType: 'image/png',
-          size: 123,
         };
 
         await request(httpServer)
@@ -181,7 +230,6 @@ describe('Files e2e', () => {
         const invalidDto = {
           key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
           contentType: 'image/png',
-          size: 123,
         };
 
         await request(httpServer)
@@ -196,7 +244,6 @@ describe('Files e2e', () => {
         const invalidDto = {
           key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
           filename: 'avatar.png',
-          size: 123,
         };
 
         await request(httpServer)

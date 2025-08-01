@@ -12,7 +12,11 @@ export async function getFileStream(configService: ConfigService, key: string) {
     Key: key,
   });
 
-  const fileObject = await s3.send(command);
+  try {
+    const fileObject = await s3.send(command);
 
-  return fileObject.Body;
+    return fileObject.Body;
+  } catch (error) {
+    console.log('no file stream', error);
+  }
 }

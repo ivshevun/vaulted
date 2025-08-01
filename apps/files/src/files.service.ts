@@ -17,7 +17,9 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { v4 as uuid } from 'uuid';
+import { CreateFileType } from './types';
 import { getFileSize } from './utils';
 
 @Injectable()
@@ -52,16 +54,18 @@ export class FilesService {
   async confirmUpload(payload: ConfirmUploadPayload) {
     await this.isObjectExistsOrThrow({ key: payload.key });
 
-    this.antivirusClient.emit('scan', { key: payload.key });
+    const isInfected = await firstValueFrom<boolean>(
+      this.antivirusClient.send('scan', { key: payload.key }),
+    );
 
-    const fileSize = await getFileSize(this.s3, this.bucketName, payload.key);
+    if (isInfected) {
+      await this.onInfected({ key: payload.key });
+    } else {
+      const fileSize = await getFileSize(this.s3, this.bucketName, payload.key);
+      return await this.onClearFile({ ...payload, size: fileSize });
+    }
 
-    return await this.prismaService.file.create({
-      data: {
-        ...payload,
-        size: fileSize,
-      },
-    });
+    return;
   }
 
   async getReadUrl({ key }: KeyDto) {
@@ -84,13 +88,15 @@ export class FilesService {
     });
     await this.s3.send(command);
 
-    await this.prismaService.file.delete({
-      where: {
-        key: key,
+    // TODO: notify user that his file was infected and was deleted
+  }
+
+  async onClearFile(file: CreateFileType) {
+    return await this.prismaService.file.create({
+      data: {
+        ...file,
       },
     });
-
-    // TODO: notify user that his file was infected and was deleted
   }
 
   private async isObjectExistsOrThrow({ key }: KeyPayload) {

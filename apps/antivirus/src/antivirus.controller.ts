@@ -1,14 +1,14 @@
-import { Controller } from '@nestjs/common';
-import { AntivirusService } from './antivirus.service';
-import { EventPattern, Payload } from '@nestjs/microservices';
 import { KeyPayload } from '@app/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { AntivirusService } from './antivirus.service';
 
 @Controller()
 export class AntivirusController {
   constructor(private readonly antivirusService: AntivirusService) {}
 
-  @EventPattern('scan')
+  @MessagePattern('scan')
   async scan(@Payload() payload: KeyPayload) {
-    await this.antivirusService.scan(payload);
+    return await this.antivirusService.scan(payload);
   }
 }

@@ -15,6 +15,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
 import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { of } from 'rxjs';
 import { FilesService } from './files.service';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
@@ -53,6 +54,8 @@ describe('FilesService', () => {
         { provide: 'antivirus', useValue: antivirusProxyMock },
       ],
     }).compile();
+
+    antivirusProxyMock.send.mockReturnValue(of(false));
 
     service = module.get<FilesService>(FilesService);
   });
@@ -99,7 +102,7 @@ describe('FilesService', () => {
 
       await service.confirmUpload(payload);
 
-      expect(antivirusProxyMock.emit).toHaveBeenCalledWith('scan', {
+      expect(antivirusProxyMock.send).toHaveBeenCalledWith('scan', {
         key: payload.key,
       });
     });
@@ -162,13 +165,16 @@ describe('FilesService', () => {
 
       expect(s3Mock).toHaveReceivedCommand(DeleteObjectCommand);
     });
-    it('should call prisma.file.delete', async () => {
-      await service.onInfected({ key: 'file-key' });
-
-      expect(prismaServiceMock.file.delete).toHaveBeenCalled();
-    });
     it.todo(
       'should call notificationsClient.send with "notify-infected" and correct payload',
     );
+  });
+
+  describe('onClearFile', () => {
+    it('should call prisma.file.create', async () => {
+      await service.onClearFile(mockFile);
+
+      expect(prismaServiceMock.file.create).toHaveBeenCalled();
+    });
   });
 });

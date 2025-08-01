@@ -7,6 +7,7 @@ import { Controller } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { FilesService } from './files.service';
+import { CreateFileType } from './types';
 
 @Controller()
 export class FilesController {
@@ -36,5 +37,10 @@ export class FilesController {
   @EventPattern('on-infected')
   async onInfected(@Payload() payload: KeyPayload) {
     await this.filesService.onInfected(payload);
+  }
+
+  @EventPattern('on-clear-file')
+  async onClearFile(@Payload() payload: CreateFileType) {
+    await this.filesService.onClearFile(payload);
   }
 }

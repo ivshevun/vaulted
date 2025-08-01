@@ -20,9 +20,7 @@ export class AntivirusService {
 
     const { isInfected } = await clamScan.scanStream(fileStream);
 
-    if (isInfected) {
-      this.filesClient.emit('on-infected', { key });
-    }
+    return isInfected;
   }
 
   private async getFileStream(key: string) {
