@@ -48,6 +48,7 @@ apps/antivirus/.env.test
 .env.production.local
 .env.local
 .env
+.env.test
 
 # temp directory
 .temp
