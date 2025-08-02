@@ -1,38 +1,46 @@
 import { INestApplication } from '@nestjs/common';
 import { Server } from 'http';
-import { PrismaClient } from '@prisma/client';
-import { setupE2e } from '../utils';
-import { RegisterDto } from '@app/common';
+import { LoginDto, PrismaService, RegisterDto } from '@app/common';
 import request from 'supertest';
+import { setupE2e } from '../utils';
+import { v4 as uuid } from 'uuid';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
   let httpServer: Server;
-  const prisma = new PrismaClient();
+  let prisma: PrismaService;
 
   beforeAll(async () => {
     const setup = await setupE2e();
 
     app = setup.app;
     httpServer = setup.httpServer;
+
+    prisma = app.get(PrismaService);
   });
 
   afterAll(async () => {
+    await prisma.file.deleteMany();
+    await prisma.user.deleteMany();
+
     await app.close();
   });
 
-  beforeEach(async () => {
-    await prisma.file.deleteMany();
-    await prisma.user.deleteMany();
-  });
+  // beforeEach(async () => {
+  //   await prisma.file.deleteMany();
+  // });
 
   describe('Auth', () => {
     describe('Register', () => {
-      const registerDto: RegisterDto = {
-        email: 'test@gmail.com',
-        password: '123456',
-        name: 'Test User',
-      };
+      let registerDto: RegisterDto;
+
+      beforeEach(() => {
+        registerDto = {
+          email: `test+${uuid()}@gmail.com`,
+          password: '123456',
+          name: 'Test User',
+        };
+      });
 
       it('should return 201 if user is created', async () => {
         return request(httpServer)
@@ -117,18 +125,21 @@ describe('Auth (e2e)', () => {
       });
     });
     describe('Login', () => {
-      const registerDto: RegisterDto = {
-        email: 'login@gmail.com',
-        password: '123456',
-        name: 'Login User',
-      };
-
-      const loginDto = {
-        email: registerDto.email,
-        password: registerDto.password,
-      };
+      let registerDto: RegisterDto;
+      let loginDto: LoginDto;
 
       beforeEach(async () => {
+        registerDto = {
+          email: 'login@gmail.com',
+          password: '123456',
+          name: 'Login User',
+        };
+
+        loginDto = {
+          email: registerDto.email,
+          password: registerDto.password,
+        };
+
         await request(httpServer).post('/auth/register').send(registerDto);
       });
 
@@ -203,15 +214,16 @@ describe('Auth (e2e)', () => {
       });
     });
     describe('Refresh', () => {
-      const registerDto: RegisterDto = {
-        email: 'refresh@gmail.com',
-        password: '123456',
-        name: 'Refresh Test',
-      };
-
+      let registerDto: RegisterDto;
       let refreshToken: string;
 
       beforeEach(async () => {
+        registerDto = {
+          email: `refresh+${uuid()}@gmail.com`,
+          password: '123456',
+          name: 'Refresh Test',
+        };
+
         const response = await request(httpServer)
           .post('/auth/register')
           .send(registerDto)

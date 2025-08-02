@@ -4,10 +4,12 @@ import { HttpRpcExceptionInterceptor } from '../../apps/api-gateway/src/auth/int
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { Server } from 'http';
+import { PrismaModule, PrismaService } from '@app/common';
 
 export async function setupE2e() {
   const moduleFixture: TestingModule = await Test.createTestingModule({
-    imports: [ApiGatewayModule],
+    imports: [ApiGatewayModule, PrismaModule],
+    providers: [PrismaService],
   }).compile();
 
   const app = moduleFixture.createNestApplication();

@@ -36,16 +36,13 @@ export class FilesController {
       ...dto,
       userId: user.id,
     };
-    try {
-      return await firstValueFrom(
-        this.filesClient.send<{ url: string; key: string }>(
-          'get-upload-data',
-          payload,
-        ),
-      );
-    } catch (error) {
-      console.log('error in upload-data', error);
-    }
+
+    return await firstValueFrom(
+      this.filesClient.send<{ url: string; key: string }>(
+        'get-upload-data',
+        payload,
+      ),
+    );
   }
 
   @ConfirmUploadDocs()
@@ -59,13 +56,9 @@ export class FilesController {
       userId: user.id,
     };
 
-    try {
-      return await firstValueFrom(
-        this.filesClient.send<boolean>('confirm-upload', payload),
-      );
-    } catch (error) {
-      console.log('error in confirmUpload', error);
-    }
+    return await firstValueFrom(
+      this.filesClient.send<boolean>('confirm-upload', payload),
+    );
   }
 
   @GetReadUrlDocs()

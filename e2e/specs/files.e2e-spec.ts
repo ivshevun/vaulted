@@ -2,49 +2,53 @@ import {
   ConfirmUploadDto,
   createS3Client,
   GetUploadDataDto,
+  PrismaService,
 } from '@app/common';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
 import { Server } from 'http';
 import request from 'supertest';
 import { setupE2e, uploadFileToS3 } from '../utils';
+import { v4 as uuid } from 'uuid';
 
 describe('Files e2e', () => {
   let app: INestApplication;
   let httpServer: Server;
   let configService: ConfigService;
-
-  const prisma = new PrismaClient();
+  let prisma: PrismaService;
 
   beforeAll(async () => {
     const setup = await setupE2e();
 
     app = setup.app;
     httpServer = setup.httpServer;
+    prisma = app.get(PrismaService);
     configService = app.get(ConfigService);
   });
 
   afterAll(async () => {
+    await prisma.user.deleteMany();
+    await prisma.file.deleteMany();
+
     await app.close();
   });
 
-  beforeEach(async () => {
+  afterEach(async () => {
     await prisma.file.deleteMany();
-    await prisma.user.deleteMany();
   });
 
   describe('Files', () => {
     let accessToken: string;
+    let email: string;
 
     beforeEach(async () => {
+      email = `test+${uuid()}@gmail.com`;
       const response = await request(httpServer).post('/auth/register').send({
-        email: 'test@gmail.com',
+        email,
         password: '123456',
         name: 'Test User',
       });
-
       const body = response.body as Record<string, string>;
 
       accessToken = body.accessToken;
