@@ -60,12 +60,12 @@ export class FilesService {
 
     if (isInfected) {
       await this.onInfected({ key: payload.key });
+      return false;
     } else {
       const fileSize = await getFileSize(this.s3, this.bucketName, payload.key);
-      return await this.onClearFile({ ...payload, size: fileSize });
+      await this.onClearFile({ ...payload, size: fileSize });
+      return true;
     }
-
-    return;
   }
 
   async getReadUrl({ key }: KeyDto) {

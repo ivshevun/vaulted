@@ -114,7 +114,7 @@ describe('Files e2e', () => {
         dto.key = await uploadFileToS3(configService, 'user-id');
       });
 
-      it('should return a created file if body is valid and access token is provided', async () => {
+      it('should return true if body is valid and access token is provided', async () => {
         const response = await request(httpServer)
           .post('/files/confirm-upload')
           .send(dto)
@@ -122,14 +122,9 @@ describe('Files e2e', () => {
             Authorization: `Bearer ${accessToken}`,
           });
 
-        const body = response.body as Record<string, string>;
+        const body = response.body as boolean;
 
-        expect(body).toMatchObject({
-          id: expect.any(String) as string,
-          filename: expect.any(String) as string,
-          contentType: expect.any(String) as string,
-          size: expect.any(Number) as number,
-        });
+        expect(body).toBeTruthy();
       });
       it('should create a file if body is valid and access token is provided', async () => {
         await request(httpServer)

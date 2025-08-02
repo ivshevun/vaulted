@@ -17,7 +17,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { File } from '@prisma/client';
 import { firstValueFrom } from 'rxjs';
 import { CurrentUser } from '../decorators';
 import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
@@ -37,12 +36,16 @@ export class FilesController {
       ...dto,
       userId: user.id,
     };
-    return await firstValueFrom(
-      this.filesClient.send<{ url: string; key: string }>(
-        'get-upload-data',
-        payload,
-      ),
-    );
+    try {
+      return await firstValueFrom(
+        this.filesClient.send<{ url: string; key: string }>(
+          'get-upload-data',
+          payload,
+        ),
+      );
+    } catch (error) {
+      console.log('error in upload-data', error);
+    }
   }
 
   @ConfirmUploadDocs()
@@ -56,9 +59,13 @@ export class FilesController {
       userId: user.id,
     };
 
-    return await firstValueFrom(
-      this.filesClient.send<File>('confirm-upload', payload),
-    );
+    try {
+      return await firstValueFrom(
+        this.filesClient.send<boolean>('confirm-upload', payload),
+      );
+    } catch (error) {
+      console.log('error in confirmUpload', error);
+    }
   }
 
   @GetReadUrlDocs()
