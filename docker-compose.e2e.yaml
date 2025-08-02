@@ -74,18 +74,38 @@ services:
         condition: service_healthy
       clamav:
         condition: service_healthy
-  postgres:
+  postgres-files:
     image: postgres:latest
+    container_name: postgres-files
     env_file:
-      - .env.test
-    ports:
-      - '5433:5432'
+      - apps/files/.env.test
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT}:5432"
     volumes:
-      - pgdata-test:/var/lib/postgresql/data/pgdata
+      - pgdata-files-test:/var/lib/postgresql/data/pgdata
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+  postgres-auth:
+    image: postgres:latest
+    container_name: postgres-auth
+    env_file:
+      - apps/auth/.env.test
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata-auth-test:/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -104,7 +124,7 @@ services:
       - '15673:15672'
       - '5673:5672'
     healthcheck:
-      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      test: [ 'CMD', 'rabbitmq-diagnostics', 'ping' ]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -115,13 +135,17 @@ services:
       - '3310:3310'
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'clamdscan', '--version']
+      test: [ 'CMD', 'clamdscan', '--version' ]
       interval: 5s
       timeout: 3s
       retries: 3
 
 volumes:
   pgdata-test:
+    driver: local
+  pgdata-auth-test:
+    driver: local
+  pgdata-files-test:
     driver: local
   rabbitmq:
     driver: local

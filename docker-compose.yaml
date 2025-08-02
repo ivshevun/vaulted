@@ -13,7 +13,9 @@ services:
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
     depends_on:
-      postgres:
+      postgres-auth:
+        condition: service_healthy
+      postgres-files:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -31,7 +33,7 @@ services:
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
     depends_on:
-      postgres:
+      postgres-auth:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -49,7 +51,7 @@ services:
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
     depends_on:
-      postgres:
+      postgres-files:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -67,23 +69,42 @@ services:
       - ./libs:/usr/src/app/libs
       - ./prisma:/usr/src/app/prisma
     depends_on:
-      postgres:
+      postgres-files:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
       clamav:
         condition: service_healthy
-  postgres:
+  postgres-files:
     image: postgres:latest
-    container_name: postgres_container
+    container_name: postgres-files
     env_file:
-      - .env
+      - apps/files/.env
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data/pgdata
+      - pgdata-files:/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+  postgres-auth:
+    image: postgres:latest
+    container_name: postgres-auth
+    env_file:
+      - apps/auth/.env
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata-auth:/var/lib/postgresql/data/pgdata
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
@@ -121,7 +142,9 @@ services:
       retries: 3
 
 volumes:
-  pgdata:
+  pgdata-auth:
+    driver: local
+  pgdata-files:
     driver: local
   rabbitmq:
     driver: local
