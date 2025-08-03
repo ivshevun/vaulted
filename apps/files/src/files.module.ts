@@ -3,8 +3,8 @@ import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
-import { PrismaModule, PrismaService } from '@app/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PrismaModule } from './prisma';
 
 @Module({
   imports: [
@@ -39,6 +39,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     ]),
   ],
   controllers: [FilesController],
-  providers: [FilesService, PrismaService],
+  providers: [FilesService],
 })
 export class FilesModule {}

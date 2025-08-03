@@ -11,7 +11,6 @@ services:
     volumes:
       - ./apps:/usr/src/app/apps
       - ./libs:/usr/src/app/libs
-      - ./prisma:/usr/src/app/prisma
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -31,7 +30,6 @@ services:
     volumes:
       - ./apps/auth:/usr/src/app/apps/auth
       - ./libs:/usr/src/app/libs
-      - ./prisma:/usr/src/app/prisma
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -49,7 +47,6 @@ services:
     volumes:
       - ./apps/files:/usr/src/app/apps/files
       - ./libs:/usr/src/app/libs
-      - ./prisma:/usr/src/app/prisma
     depends_on:
       postgres-files:
         condition: service_healthy
@@ -67,7 +64,6 @@ services:
     volumes:
       - ./apps/antivirus:/usr/src/app/apps/antivirus
       - ./libs:/usr/src/app/libs
-      - ./prisma:/usr/src/app/prisma
     depends_on:
       postgres-files:
         condition: service_healthy

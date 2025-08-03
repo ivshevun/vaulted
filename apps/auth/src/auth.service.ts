@@ -1,9 +1,10 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { UsersService } from './users';
-import { LoginDto, RegisterDto, UserDto } from '@app/common';
+import { LoginDto, RegisterDto } from '@app/common';
 import { TokenService } from './token';
 import argon from 'argon2';
 import { RpcException } from '@nestjs/microservices';
+import { convertToUserDto } from './utils';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +25,7 @@ export class AuthService {
 
     const createdUser = await this.usersService.create(registerDto);
 
-    const userDto = new UserDto(createdUser);
+    const userDto = convertToUserDto(createdUser);
     return this.tokenService.signTokens(userDto);
   }
 
@@ -50,7 +51,7 @@ export class AuthService {
       });
     }
 
-    const userDto = new UserDto(userInDB);
+    const userDto = convertToUserDto(userInDB);
     return this.tokenService.signTokens(userDto);
   }
 

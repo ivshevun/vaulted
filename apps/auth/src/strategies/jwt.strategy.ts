@@ -4,7 +4,7 @@ import { UsersService } from '../users';
 import { ConfigService } from '@nestjs/config';
 import { UserDto } from '@app/common';
 import { Injectable } from '@nestjs/common';
-import { extractJwtFromBearer } from '../utils';
+import { convertToUserDto, extractJwtFromBearer } from '../utils';
 import { JwtRequest } from '../interfaces';
 
 @Injectable()
@@ -31,6 +31,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       return null;
     }
 
-    return new UserDto(user);
+    return convertToUserDto(user);
   }
 }

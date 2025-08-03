@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { LoginDto, PrismaService, RegisterDto, UserDto } from '@app/common';
+import { LoginDto, PrismaService, RegisterDto } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 import { User } from '@prisma/client';
 import { HttpStatus } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import { convertToUserDto } from './utils';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -72,7 +73,7 @@ describe('AuthService', () => {
       );
       expect(usersServiceMock.create).toHaveBeenCalledWith(registerDto);
       expect(tokenServiceMock.signTokens).toHaveBeenCalledWith(
-        new UserDto(user),
+        convertToUserDto(user),
       );
       expect(tokens).toBeDefined();
     });
@@ -124,7 +125,7 @@ describe('AuthService', () => {
 
   describe('Refresh', () => {
     it('should return tokens if refresh token is valid', async () => {
-      tokenServiceMock.verifyToken.mockResolvedValue(new UserDto(user));
+      tokenServiceMock.verifyToken.mockResolvedValue(convertToUserDto(user));
 
       const tokens = await service.refresh(expectedTokens.refreshToken);
 

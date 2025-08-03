@@ -1,8 +1,4 @@
-import {
-  ConfirmUploadPayload,
-  GetUploadDataPayload,
-  PrismaService,
-} from '@app/common';
+import { ConfirmUploadPayload, GetUploadDataPayload } from '@app/common';
 import {
   DeleteObjectCommand,
   HeadObjectCommand,
@@ -17,6 +13,7 @@ import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { of } from 'rxjs';
 import { FilesService } from './files.service';
+import { PrismaService } from './prisma';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),

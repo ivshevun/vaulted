@@ -4,7 +4,6 @@ import {
   GetUploadDataPayload,
   KeyDto,
   KeyPayload,
-  PrismaService,
 } from '@app/common';
 import {
   DeleteObjectCommand,
@@ -21,6 +20,7 @@ import { firstValueFrom } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 import { CreateFileType } from './types';
 import { getFileSize } from './utils';
+import { PrismaService } from './prisma';
 
 @Injectable()
 export class FilesService {
