@@ -3,11 +3,12 @@ import { AuthController } from './auth.controller';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { LoginPayload, PrismaService, RegisterPayload } from '@app/common';
+import { LoginPayload, RegisterPayload } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { firstValueFrom } from 'rxjs';
+import { PrismaService } from './prisma';
 
 describe('AuthController', () => {
   let controller: AuthController;

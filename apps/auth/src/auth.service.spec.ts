@@ -2,15 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { LoginDto, PrismaService, RegisterDto } from '@app/common';
+import { LoginDto, RegisterDto } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { v4 as uuid } from 'uuid';
-import { User } from '@prisma/client';
+import { User } from '@prisma/auth-client';
 import { HttpStatus } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { convertToUserDto } from './utils';
+import { PrismaService } from './prisma';
 
 describe('AuthService', () => {
   let service: AuthService;

@@ -9,7 +9,7 @@ import {
 import { HttpStatus } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
-import { File } from '@prisma/client';
+import { File } from '@prisma/files-client';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { of } from 'rxjs';
 import { FilesController } from './files.controller';
