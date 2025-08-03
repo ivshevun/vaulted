@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from './users';
-import { PrismaModule, PrismaService } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { TokenModule } from './token';
 import Joi from 'joi';
 import { JwtStrategy } from './strategies';
+import { PrismaModule, PrismaService } from '@app/common';
 
 @Module({
   imports: [

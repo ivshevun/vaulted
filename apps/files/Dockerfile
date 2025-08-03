@@ -10,12 +10,11 @@ COPY nest-cli.json nest-cli.json
 COPY .env.test .env.test
 COPY apps/files apps/files
 COPY libs libs
-COPY prisma prisma
 
 
 RUN npm install -g pnpm
 RUN pnpm install
-RUN npx prisma generate
+RUN npx prisma generate --schema=apps/files/src/prisma/schema.prisma
 RUN pnpm run build files
 
 CMD ["pnpm", "start:dev", "files"]
