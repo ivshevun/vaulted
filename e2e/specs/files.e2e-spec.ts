@@ -10,7 +10,7 @@ import { Server } from 'http';
 import request from 'supertest';
 import { setupE2e, uploadFileToS3 } from '../utils';
 import { v4 as uuid } from 'uuid';
-import { PrismaService as FilesPrismaService } from '../../apps/files/src/prisma';
+import { PrismaService as FilesPrismaService } from '@apps/files/src/prisma';
 
 describe('Files e2e', () => {
   let app: INestApplication;

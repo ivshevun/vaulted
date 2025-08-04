@@ -4,12 +4,12 @@ import { LoginDto, RegisterDto } from '@app/common';
 import request from 'supertest';
 import { setupE2e } from '../utils';
 import { v4 as uuid } from 'uuid';
-import { PrismaService } from '../../apps/auth/src/prisma';
+import { PrismaService as AuthPrismaService } from '@apps/auth/src/prisma';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
   let httpServer: Server;
-  let prisma: PrismaService;
+  let prisma: AuthPrismaService;
 
   beforeAll(async () => {
     const setup = await setupE2e();
@@ -17,7 +17,7 @@ describe('Auth (e2e)', () => {
     app = setup.app;
     httpServer = setup.httpServer;
 
-    prisma = app.get(PrismaService);
+    prisma = app.get(AuthPrismaService);
   });
 
   afterAll(async () => {
