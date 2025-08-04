@@ -2,7 +2,6 @@ import {
   ConfirmUploadDto,
   createS3Client,
   GetUploadDataDto,
-  PrismaService,
 } from '@app/common';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { INestApplication } from '@nestjs/common';
@@ -11,24 +10,24 @@ import { Server } from 'http';
 import request from 'supertest';
 import { setupE2e, uploadFileToS3 } from '../utils';
 import { v4 as uuid } from 'uuid';
+import { PrismaService as FilesPrismaService } from '../../apps/files/src/prisma';
 
 describe('Files e2e', () => {
   let app: INestApplication;
   let httpServer: Server;
   let configService: ConfigService;
-  let prisma: PrismaService;
+  let prisma: FilesPrismaService;
 
   beforeAll(async () => {
     const setup = await setupE2e();
 
     app = setup.app;
     httpServer = setup.httpServer;
-    prisma = app.get(PrismaService);
+    prisma = app.get(FilesPrismaService);
     configService = app.get(ConfigService);
   });
 
   afterAll(async () => {
-    await prisma.user.deleteMany();
     await prisma.file.deleteMany();
 
     await app.close();

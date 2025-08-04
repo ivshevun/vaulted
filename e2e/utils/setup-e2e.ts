@@ -4,12 +4,19 @@ import { HttpRpcExceptionInterceptor } from '../../apps/api-gateway/src/auth/int
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { Server } from 'http';
-import { PrismaModule, PrismaService } from '@app/common';
+import {
+  PrismaModule as FilesPrismaModule,
+  PrismaService as FilesPrismaService,
+} from '../../apps/files/src/prisma';
+import {
+  PrismaModule as AuthPrismaModule,
+  PrismaService as AuthPrismaService,
+} from '../../apps/auth/src/prisma';
 
 export async function setupE2e() {
   const moduleFixture: TestingModule = await Test.createTestingModule({
-    imports: [ApiGatewayModule, PrismaModule],
-    providers: [PrismaService],
+    imports: [ApiGatewayModule, FilesPrismaModule, AuthPrismaModule],
+    providers: [FilesPrismaService, AuthPrismaService],
   }).compile();
 
   const app = moduleFixture.createNestApplication();

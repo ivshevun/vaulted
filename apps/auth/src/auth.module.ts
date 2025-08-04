@@ -18,7 +18,7 @@ import { PrismaModule } from './prisma';
         POSTGRES_PASSWORD: Joi.string().required(),
         POSTGRES_DB: Joi.string().required(),
         POSTGRES_PORT: Joi.number().required(),
-        DATABASE_URL: Joi.string().required(),
+        AUTH_DATABASE_URL: Joi.string().required(),
       }),
     }),
     TokenModule,

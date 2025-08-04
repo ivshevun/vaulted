@@ -12,7 +12,7 @@ import { PrismaModule } from './prisma';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
-        DATABASE_URL: Joi.string().required(),
+        FILES_DATABASE_URL: Joi.string().required(),
         PORT: Joi.string().required(),
 
         AWS_ACCESS_ID: Joi.string().required(),

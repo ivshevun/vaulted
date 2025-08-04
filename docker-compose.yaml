@@ -79,7 +79,7 @@ services:
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "${POSTGRES_FILES_PORT}:5432"
+      - "5432:5432"
     volumes:
       - pgdata-files:/var/lib/postgresql/data/pgdata
     healthcheck:
@@ -98,7 +98,7 @@ services:
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "${POSTGRES_AUTH_PORT}:5432"
+      - "5434:5432"
     volumes:
       - pgdata-auth:/var/lib/postgresql/data/pgdata
     healthcheck:
