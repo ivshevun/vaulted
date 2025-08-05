@@ -17,12 +17,13 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json",
     "test:e2e:watch": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json --watchAll",
     "test:e2e:auth:watch": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json --watch --testPathPattern=e2e/specs/auth.e2e-spec",
     "test:e2e:files:watch": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json --watch --testPathPattern=e2e/specs/files.e2e-spec",
     "typecheck": "tsc --noEmit",
-    "docker:test-e2e": "docker compose -f docker-compose.e2e.yaml up -d && docker exec -it vaulted-api-gateway-1 sh",
-    "docker:test-e2e-build": "docker compose -f docker-compose.e2e.yaml up --build -d && docker exec -it vaulted-api-gateway-1 sh"
+    "docker:test-e2e": "docker compose -f docker-compose.e2e.yaml up -d && docker exec vaulted-api-gateway-1 pnpm test:e2e",
+    "docker:test-e2e-build": "docker compose -f docker-compose.e2e.yaml up --build -d && docker exec vaulted-api-gateway-1 pnpm test:e2e"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.810.0",

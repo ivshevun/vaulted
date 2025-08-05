@@ -44,6 +44,9 @@ jobs:
       - name: ✅ Run tests
         run: pnpm test
 
+      - name: ✅ Run e2e tests
+        run: pnpm docker:test-e2e-build
+
       - name: ⬇️ Fetch main branch
         run: git fetch origin main
 
