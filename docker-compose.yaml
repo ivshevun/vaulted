@@ -129,13 +129,13 @@ services:
     image: mkodockx/docker-clamav:alpine
     container_name: clamav
     ports:
-      - "3310:3310"
+      - '3310:3310'
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "clamdscan", "--version" ]
+      test: [ "CMD", "sh", "-c", "echo PING | nc -w 1 127.0.0.1 3310 | grep PONG" ]
       interval: 5s
       timeout: 3s
-      retries: 3
+      retries: 20
 
 volumes:
   pgdata-auth:

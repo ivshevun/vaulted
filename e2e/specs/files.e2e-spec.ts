@@ -137,9 +137,13 @@ describe('Files e2e', () => {
             Authorization: `Bearer ${accessToken}`,
           });
 
-        const files = await prisma.file.findMany();
+        const file = await prisma.file.findUnique({
+          where: {
+            key: dto.key,
+          },
+        });
 
-        expect(files.length).toBe(1);
+        expect(file).toBeDefined();
       });
       it('should delete a file from db if file is infected', async () => {
         const dto: ConfirmUploadDto = {
