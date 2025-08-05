@@ -11,20 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: 🔧 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: 📥 Setup pnpm
+      - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      - name: 📄 Write .env files from secrets
+      - name: Write .env files from secrets
         run: |
           echo "${{ secrets.AUTH_ENV_TEST }}" > apps/auth/.env.test
           echo "${{ secrets.FILES_ENV_TEST }}" > apps/files/.env.test
@@ -32,31 +32,39 @@ jobs:
           echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env.test
           echo "${{ secrets.ENV_TEST }}" > .env.test
 
-      - name: 📦 Install deps
+      - name: Install deps
         run: pnpm install
 
-      - name: 🛠 Generate Prisma Clients
+      - name: Generate Prisma Clients
         run: |
           pnpm prisma generate --schema=apps/files/src/prisma/schema.prisma
           pnpm prisma generate --schema=apps/auth/src/prisma/schema.prisma
 
-      - name: 🛠 Build app
+      - name: Build app
         run: pnpm build
 
-      - name: 🧼 Lint
+      - name: Lint
         run: pnpm lint
 
-      - name: 🔎 Typecheck
+      - name: Typecheck
         run: pnpm typecheck
 
-      - name: ✅ Run tests
+      - name: Run unit tests
         run: pnpm test
 
-      - name: ✅ Run e2e tests
-        run: pnpm docker:test-e2e-build
+      - name: Run docker compose
+        run: docker compose -f docker-compose.e2e.yaml up --build -d
 
-      - name: ⬇️ Fetch main branch
+      - name: Run migrations inside docker compose
+        run: |
+          docker exec vaulted-api-gateway-1 pnpm prisma db push --schema=apps/files/src/prisma/schema.prisma
+          docker exec vaulted-api-gateway-1 pnpm prisma db push --schema=apps/auth/src/prisma/schema.prisma
+
+      - name: Run e2e tests
+        run: docker exec vaulted-api-gateway-1 pnpm test:e2e
+
+      - name: Fetch main branch
         run: git fetch origin main
 
-      - name: 📜 Check commit messages
+      - name: Check commit messages
         run: pnpm commitlint --from=origin/main --to=HEAD
