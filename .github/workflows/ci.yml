@@ -31,6 +31,7 @@ jobs:
           echo "${{ secrets.API_GATEWAY_ENV_TEST }}" > apps/api-gateway/.env.test
           echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env.test
           echo "${{ secrets.ENV_TEST }}" > .env.test
+          echo "${{ secrets.ENV_TEST }}" > .env
 
       - name: Install deps
         run: pnpm install
