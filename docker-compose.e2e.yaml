@@ -78,6 +78,9 @@ services:
     env_file:
       - apps/files/.env.test
     environment:
+      POSTGRES_USER: ${POSTGRES_FILES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_FILES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_FILES_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
@@ -97,6 +100,9 @@ services:
     env_file:
       - apps/auth/.env.test
     environment:
+      POSTGRES_USER: ${POSTGRES_AUTH_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_AUTH_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5434:5432"
