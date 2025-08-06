@@ -76,12 +76,6 @@ jobs:
         if: failure()
         run: docker compose logs
 
-      - name: Check Postgres users and DB owners
-        if: failure()
-        run: |
-          docker exec postgres-files psql -U postgres -c "\l"
-          docker exec postgres-files psql -U postgres -c "\du"
-
       - name: Fetch main branch
         run: git fetch origin main
 
