@@ -27,9 +27,17 @@ jobs:
       - name: Write .env files from secrets
         run: |
           echo "${{ secrets.AUTH_ENV_TEST }}" > apps/auth/.env.test
+          echo "${{ secrets.AUTH_ENV_TEST }}" > apps/auth/.env
+          
           echo "${{ secrets.FILES_ENV_TEST }}" > apps/files/.env.test
+          echo "${{ secrets.FILES_ENV_TEST }}" > apps/files/.env
+          
           echo "${{ secrets.API_GATEWAY_ENV_TEST }}" > apps/api-gateway/.env.test
+          echo "${{ secrets.API_GATEWAY_ENV_TEST }}" > apps/api-gateway/.env
+          
           echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env.test
+          echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env
+          
           echo "${{ secrets.ENV_TEST }}" > .env.test
           echo "${{ secrets.ENV_TEST }}" > .env
 
