@@ -81,6 +81,7 @@ services:
       POSTGRES_USER: ${POSTGRES_FILES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_FILES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_FILES_DB}
+      POSTGRES_HOST_AUTH_METHOD: trust
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5555:5432"
@@ -103,6 +104,7 @@ services:
       POSTGRES_USER: ${POSTGRES_AUTH_USER}
       POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD}
       POSTGRES_DB: ${POSTGRES_AUTH_DB}
+      POSTGRES_HOST_AUTH_METHOD: trust
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5454:5432"
