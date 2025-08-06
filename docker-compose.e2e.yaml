@@ -83,7 +83,7 @@ services:
       POSTGRES_DB: ${POSTGRES_FILES_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "5555:5432"
     volumes:
       - pgdata-files-test:/var/lib/postgresql/data/pgdata
     healthcheck:
@@ -105,7 +105,7 @@ services:
       POSTGRES_DB: ${POSTGRES_AUTH_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5434:5432"
+      - "5454:5432"
     volumes:
       - pgdata-auth-test:/var/lib/postgresql/data/pgdata
     healthcheck:
