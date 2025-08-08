@@ -66,8 +66,8 @@ jobs:
 
       - name: Run migrations
         run: |
-          set -a && source .env && FILES_DATABASE_URL="postgresql://${POSTGRES_FILES_USER}:${POSTGRES_FILES_PASSWORD}@localhost:${POSTGRES_FILES_PORT}/${POSTGRES_FILES_DB}" pnpm prisma db push --schema=apps/files/src/prisma/schema.prisma
-          set -a && source .env && AUTH_DATABASE_URL="postgresql://${POSTGRES_AUTH_USER}:${POSTGRES_AUTH_PASSWORD}@localhost:${POSTGRES_AUTH_PORT}/${POSTGRES_AUTH_DB}" pnpm prisma db push --schema=apps/auth/src/prisma/schema.prisma
+          set -a && source .env && FILES_DATABASE_URL="postgresql://${POSTGRES_FILES_USER}:${POSTGRES_FILES_PASSWORD}@localhost:5555/${POSTGRES_FILES_DB}" pnpm prisma db push --schema=apps/files/src/prisma/schema.prisma
+          set -a && source .env && AUTH_DATABASE_URL="postgresql://${POSTGRES_AUTH_USER}:${POSTGRES_AUTH_PASSWORD}@localhost:5454/${POSTGRES_AUTH_DB}" pnpm prisma db push --schema=apps/auth/src/prisma/schema.prisma
 
       - name: Run e2e tests
         run: docker exec vaulted-api-gateway-1 pnpm test:e2e
