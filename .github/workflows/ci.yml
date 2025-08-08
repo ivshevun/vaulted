@@ -76,6 +76,12 @@ jobs:
         if: failure()
         run: docker compose logs
 
+      - name: Check postgres users on failure
+        if: failure()
+        run: |
+          docker exec -it vaulted-postgres-files psql -U files_user -c "\du"
+          docker exec -it vaulted-postgres-files psql -U files_user -c "\l"
+
       - name: Fetch main branch
         run: git fetch origin main
 
