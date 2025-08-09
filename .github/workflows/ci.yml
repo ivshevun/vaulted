@@ -64,15 +64,6 @@ jobs:
       - name: Run docker compose
         run: docker compose -f docker-compose.e2e.yaml up --build -d
 
-      - name: Log DB files url && use printenv && log env files
-        run: |
-          docker exec vaulted-api-gateway-1 sh -c 'set -a && source apps/files/.env.test && echo $FILES_DATABASE_URL && printenv'
-          cat apps/files/.env.test
-          cat apps/auth/.env.test
-          cat apps/antivirus/.env.test
-          cat apps/api-gateway/.env.test
-          cat .env.test
-
       - name: Run migrations inside docker compose
         run: |
           docker exec vaulted-api-gateway-1 sh -c "set -a && source apps/files/.env.test && pnpm prisma db push --schema=apps/files/src/prisma/schema.prisma"
@@ -84,16 +75,6 @@ jobs:
       - name: Show docker logs
         if: failure()
         run: docker compose logs
-
-      - name: Check postgres auth method
-        if: failure()
-        run: docker exec postgres-files psql -h postgres-files -U files_user -d files_db -c "SELECT 1;"
-
-      - name: Check postgres users on failure
-        if: failure()
-        run: |
-          docker exec postgres-files psql -U files_user -d files_db -c "\du"
-          docker exec postgres-files psql -U files_user -d files_db -c "\l"
 
       - name: Fetch main branch
         run: git fetch origin main
