@@ -85,7 +85,6 @@ services:
     ports:
       - "5555:5432"
     volumes:
-      - pgdata-files-test:/var/lib/postgresql/data/pgdata
       - ./pg_hba.conf:/var/lib/postgresql/data/pgdata/pg_hba.conf
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_FILES_USER} -d ${POSTGRES_FILES_DB}" ]
@@ -108,7 +107,6 @@ services:
     ports:
       - "5454:5432"
     volumes:
-      - pgdata-auth-test:/var/lib/postgresql/data/pgdata
       - ./pg_hba.conf:/var/lib/postgresql/data/pgdata/pg_hba.conf
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER} -d ${POSTGRES_AUTH_DB}" ]
