@@ -64,9 +64,14 @@ jobs:
       - name: Run docker compose
         run: docker compose -f docker-compose.e2e.yaml up --build -d
 
-      - name: Log DB files url && log env
+      - name: Log DB files url && use printenv && log env files
         run: |
           docker exec vaulted-api-gateway-1 sh -c 'set -a && source apps/files/.env.test && echo $FILES_DATABASE_URL && printenv'
+          cat apps/files/.env.test
+          cat apps/auth/.env.test
+          cat apps/antivirus/.env.test
+          cat apps/api-gateway/.env.test
+          cat .env.test
 
       - name: Run migrations inside docker compose
         run: |
