@@ -145,9 +145,5 @@ services:
       retries: 20
 
 volumes:
-  pgdata-auth-test:
-    driver: local
-  pgdata-files-test:
-    driver: local
   rabbitmq:
     driver: local
