@@ -14,10 +14,10 @@ import { PrismaModule } from './prisma';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
-        POSTGRES_USER: Joi.string().required(),
-        POSTGRES_PASSWORD: Joi.string().required(),
-        POSTGRES_DB: Joi.string().required(),
-        POSTGRES_PORT: Joi.number().required(),
+        POSTGRES_AUTH_USER: Joi.string().required(),
+        POSTGRES_AUTH_PASSWORD: Joi.string().required(),
+        POSTGRES_AUTH_DB: Joi.string().required(),
+        POSTGRES_AUTH_PORT: Joi.number().required(),
         AUTH_DATABASE_URL: Joi.string().required(),
       }),
     }),
