@@ -76,6 +76,10 @@ jobs:
         if: failure()
         run: docker compose logs
 
+      - name: Check postgres auth method
+        if: failure()
+        run: docker exec postgres-files psql -h postgres-files -U files_user -d files_db -c "SELECT 1;"
+
       - name: Check postgres users on failure
         if: failure()
         run: |
