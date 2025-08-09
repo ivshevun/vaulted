@@ -79,8 +79,8 @@ jobs:
       - name: Check postgres users on failure
         if: failure()
         run: |
-          docker exec postgres-files psql -U files_user -c "\du"
-          docker exec postgres-files psql -U files_user -c "\l"
+          docker exec postgres-files psql -U files_user -d files_db -c "\du"
+          docker exec postgres-files psql -U files_user -d files_db -c "\l"
 
       - name: Fetch main branch
         run: git fetch origin main
