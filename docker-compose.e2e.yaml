@@ -84,6 +84,8 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5555:5432"
+    volumes:
+      - pgdata-files-test:/var/lib/postgresql/data/pgdata
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_FILES_USER} -d ${POSTGRES_FILES_DB}" ]
       interval: 5s
@@ -104,6 +106,8 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5454:5432"
+    volumes:
+      - pgdata-auth-test:/var/lib/postgresql/data/pgdata
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER} -d ${POSTGRES_AUTH_DB}" ]
       interval: 5s
@@ -141,5 +145,9 @@ services:
       retries: 20
 
 volumes:
+  pgdata-auth-test:
+    driver: local
+  pgdata-files-test:
+    driver: local
   rabbitmq:
     driver: local
