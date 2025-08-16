@@ -71,6 +71,18 @@ services:
         condition: service_healthy
       clamav:
         condition: service_healthy
+  notifications:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./apps/notifications/Dockerfile
+    env_file:
+      - apps/notifications/.env
+    volumes:
+      - ./apps/notifications:/usr/src/app/apps/notifications
+      - ./libs:/usr/src/app/libs
+    ports:
+      - '5001:5001'
   postgres-files:
     image: postgres:latest
     container_name: postgres-files
