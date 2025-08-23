@@ -1,7 +1,7 @@
 # Vaulted
 
-**Vaulted** is a next-generation **cloud storage** platform built on a **microservices architecture** with **RabbitMQ
-**.  
+**Vaulted** is a next-generation **cloud storage** platform built on a **microservices architecture** with
+**RabbitMQ**.
 The project focuses on **security**, **scalability**, and **developer-friendly workflows**.
 
 ---
