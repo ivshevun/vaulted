@@ -62,3 +62,7 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# AI generated files and folders
+/.claude
+CLAUDE.MD
