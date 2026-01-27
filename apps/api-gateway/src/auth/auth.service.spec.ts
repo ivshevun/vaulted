@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { LoggerModule } from '@app/common';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -24,7 +25,7 @@ describe('AuthService', () => {
     expectedRefreshToken = 'refresh-token';
 
     const module = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ isGlobal: true })],
+      imports: [await ConfigModule.forRoot({ isGlobal: true }), LoggerModule],
       providers: [
         AuthService,
         {

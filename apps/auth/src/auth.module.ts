@@ -7,10 +7,10 @@ import { TokenModule } from './token';
 import Joi from 'joi';
 import { JwtStrategy } from './strategies';
 import { PrismaModule } from './prisma';
+import { LoggerModule } from '@app/common';
 
 @Module({
   imports: [
-    PrismaModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
@@ -21,6 +21,8 @@ import { PrismaModule } from './prisma';
         AUTH_DATABASE_URL: Joi.string().required(),
       }),
     }),
+    LoggerModule,
+    PrismaModule,
     TokenModule,
   ],
   controllers: [AuthController],

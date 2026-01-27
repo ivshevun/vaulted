@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { LoginPayload, RegisterPayload } from '@app/common';
+import { LoggerModule, LoginPayload, RegisterPayload } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
@@ -35,6 +35,7 @@ describe('AuthController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         await ConfigModule.forRoot({ isGlobal: true }),
+        LoggerModule,
         JwtModule.register({}),
       ],
       controllers: [AuthController],

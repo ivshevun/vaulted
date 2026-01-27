@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { LoginDto, RegisterDto } from '@app/common';
+import { LoggerModule, LoginDto, RegisterDto } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
@@ -49,6 +49,7 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         await ConfigModule.forRoot({ isGlobal: true }),
+        LoggerModule,
         JwtModule.register({}),
       ],
       providers: [

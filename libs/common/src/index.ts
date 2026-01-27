@@ -5,3 +5,4 @@ export * from './interfaces';
 export * from './payloads';
 export * from './utils';
 export * from './types';
+export * from './logger';
