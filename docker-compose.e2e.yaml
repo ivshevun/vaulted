@@ -1,6 +1,8 @@
 services:
   api-gateway:
     restart: unless-stopped
+    container_name: vaulted-api-gateway-test
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/api-gateway/Dockerfile
@@ -23,6 +25,8 @@ services:
         condition: service_healthy
   auth:
     restart: unless-stopped
+    container_name: vaulted-auth-test
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
@@ -40,6 +44,8 @@ services:
         condition: service_healthy
   files:
     restart: unless-stopped
+    container_name: vaulted-files-test
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/files/Dockerfile
@@ -57,6 +63,8 @@ services:
         condition: service_healthy
   antivirus:
     restart: unless-stopped
+    container_name: vaulted-antivirus-test
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/antivirus/Dockerfile
@@ -74,7 +82,8 @@ services:
         condition: service_healthy
   postgres-files:
     image: postgres:latest
-    container_name: postgres-files
+    container_name: vaulted-postgres-files-test
+    platform: linux/amd64
     env_file:
       - apps/files/.env.test
     environment:
@@ -96,7 +105,8 @@ services:
     stdin_open: true
   postgres-auth:
     image: postgres:latest
-    container_name: postgres-auth
+    container_name: vaulted-postgres-auth-test
+    platform: linux/amd64
     env_file:
       - apps/auth/.env.test
     environment:
@@ -118,6 +128,8 @@ services:
     stdin_open: true
   rabbitmq:
     image: rabbitmq:4.1.0-management
+    container_name: vaulted-rabbitmq-test
+    platform: linux/amd64
     hostname: rabbitmq
     restart: always
     env_file:
@@ -131,10 +143,12 @@ services:
       test: [ 'CMD', 'rabbitmq-diagnostics', 'ping' ]
       interval: 5s
       timeout: 3s
-      retries: 3
+      retries: 10
+      start_period: 30s
   clamav:
-    image: mkodockx/docker-clamav:alpine
-    container_name: clamav
+    image: clamav/clamav:1.5
+    container_name: vaulted-clamav-test
+    platform: linux/amd64
     ports:
       - '3310:3310'
     restart: unless-stopped

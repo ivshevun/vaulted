@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:22-alpine
 
 WORKDIR /usr/src/app
 
@@ -17,4 +17,4 @@ RUN pnpm install
 RUN npx prisma generate --schema=apps/auth/src/prisma/schema.prisma
 RUN pnpm run build auth
 
-CMD ["pnpm", "start:dev", "auth"]
+CMD sh -c "npx prisma migrate deploy --schema=apps/auth/src/prisma/schema.prisma && pnpm start:dev auth"

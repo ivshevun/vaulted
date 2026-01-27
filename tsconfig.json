@@ -20,15 +20,9 @@
     "esModuleInterop": true,
     "strictFunctionTypes": true,
     "paths": {
-      "@app/common": [
-        "libs/common/src"
-      ],
-      "@app/common/*": [
-        "libs/common/src/*"
-      ],
-      "@apps/*": [
-        "apps/*"
-      ]
+      "@app/common": ["libs/common/src"],
+      "@app/common/*": ["libs/common/src/*"],
+      "@apps/*": ["apps/*"]
     },
     "jsx": "react"
   }

@@ -1,6 +1,8 @@
 services:
   api-gateway:
     restart: unless-stopped
+    container_name: vaulted-api-gateway
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/api-gateway/Dockerfile
@@ -22,6 +24,8 @@ services:
         condition: service_healthy
   auth:
     restart: unless-stopped
+    container_name: vaulted-auth
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
@@ -39,6 +43,8 @@ services:
         condition: service_healthy
   files:
     restart: unless-stopped
+    container_name: vaulted-files
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/files/Dockerfile
@@ -56,6 +62,8 @@ services:
         condition: service_healthy
   antivirus:
     restart: unless-stopped
+    container_name: vaulted-antivirus
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/antivirus/Dockerfile
@@ -73,6 +81,8 @@ services:
         condition: service_healthy
   notifications:
     restart: unless-stopped
+    container_name: vaulted-notifications
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./apps/notifications/Dockerfile
@@ -85,7 +95,8 @@ services:
       - '5001:5001'
   postgres-files:
     image: postgres:latest
-    container_name: postgres-files
+    container_name: vaulted-postgres-files
+    platform: linux/amd64
     env_file:
       - apps/files/.env
     environment:
@@ -107,7 +118,8 @@ services:
     stdin_open: true
   postgres-auth:
     image: postgres:latest
-    container_name: postgres-auth
+    container_name: vaulted-postgres-auth
+    platform: linux/amd64
     env_file:
       - apps/auth/.env
     environment:
@@ -129,7 +141,9 @@ services:
     tty: true
     stdin_open: true
   rabbitmq:
+    container_name: vaulted-rabbitmq
     image: rabbitmq:4.1.0-management
+    platform: linux/amd64
     hostname: rabbitmq
     restart: unless-stopped
     env_file:
@@ -141,18 +155,20 @@ services:
       - "5672:5672"
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
   clamav:
-    image: mkodockx/docker-clamav:alpine
-    container_name: clamav
+    image: clamav/clamav:1.5
+    container_name: vaulted-clamav
+    platform: linux/amd64
     ports:
       - '3310:3310'
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "sh", "-c", "echo PING | nc -w 1 127.0.0.1 3310 | grep PONG" ]
-      interval: 5s
+      interval: 10s
       timeout: 3s
       retries: 20
 
