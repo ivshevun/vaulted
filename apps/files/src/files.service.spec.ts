@@ -1,4 +1,8 @@
-import { ConfirmUploadPayload, GetUploadDataPayload } from '@app/common';
+import {
+  ConfirmUploadPayload,
+  GetUploadDataPayload,
+  pinoConfig,
+} from '@app/common';
 import {
   DeleteObjectCommand,
   HeadObjectCommand,
@@ -14,6 +18,7 @@ import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { of } from 'rxjs';
 import { FilesService } from './files.service';
 import { PrismaService } from './prisma';
+import { LoggerModule } from 'nestjs-pino';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
@@ -44,7 +49,10 @@ describe('FilesService', () => {
     expect.extend(matchers);
 
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ isGlobal: true })],
+      imports: [
+        await ConfigModule.forRoot({ isGlobal: true }),
+        LoggerModule.forRoot(pinoConfig),
+      ],
       providers: [
         FilesService,
         { provide: PrismaService, useValue: prismaServiceMock },

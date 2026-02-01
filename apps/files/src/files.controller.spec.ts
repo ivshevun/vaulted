@@ -2,6 +2,7 @@ import {
   ConfirmUploadPayload,
   GetUploadDataPayload,
   KeyDto,
+  pinoConfig,
 } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -9,6 +10,7 @@ import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { firstValueFrom } from 'rxjs';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
+import { LoggerModule } from 'nestjs-pino';
 
 describe('FilesController', () => {
   let controller: FilesController;
@@ -18,7 +20,10 @@ describe('FilesController', () => {
     filesServiceMock = mockDeep<FilesService>();
 
     const module = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ isGlobal: true })],
+      imports: [
+        await ConfigModule.forRoot({ isGlobal: true }),
+        LoggerModule.forRoot(pinoConfig),
+      ],
       controllers: [FilesController],
       providers: [
         {

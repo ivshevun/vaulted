@@ -5,10 +5,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from './prisma';
+import { pinoConfig } from '@app/common';
+import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [
     PrismaModule,
+    LoggerModule.forRoot(pinoConfig),
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
