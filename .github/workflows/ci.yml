@@ -38,6 +38,9 @@ jobs:
           echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env.test
           echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env
           
+          echo "${{ secrets.NOTIFICATIONS_ENV_TEST }}" > apps/notifications/.env.test
+          echo "${{ secrets.NOTIFICATIONS_ENV_TEST }}" > apps/notifications/.env
+          
           echo "${{ secrets.ENV_TEST }}" > .env.test
           echo "${{ secrets.ENV_TEST }}" > .env
 
