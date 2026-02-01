@@ -17,14 +17,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, timeout } from 'rxjs';
 import { CurrentUser } from '../decorators';
 import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @UseGuards(JwtGuard)
 @Controller('files')
 export class FilesController {
-  constructor(@Inject('files') private readonly filesClient: ClientProxy) {}
+  constructor(
+    @Inject('files') private readonly filesClient: ClientProxy,
+    @InjectPinoLogger() private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(FilesController.name);
+  }
 
   @GetUploadDataDocs()
   @Get('upload-data')
@@ -38,10 +44,25 @@ export class FilesController {
     };
 
     return await firstValueFrom(
-      this.filesClient.send<{ url: string; key: string }>(
-        'get-upload-data',
-        payload,
-      ),
+      this.filesClient
+        .send<{ url: string; key: string }>('get-upload-data', payload)
+        .pipe(
+          timeout(5000),
+          catchError((err: unknown) => {
+            this.logger.error(
+              {
+                err,
+                layer: 'gateway',
+                target: 'files',
+                action: 'get-upload-data',
+                userId: user.id,
+              },
+              'Upstream service request failed',
+            );
+
+            throw err;
+          }),
+        ),
     );
   }
 
@@ -57,15 +78,48 @@ export class FilesController {
     };
 
     return await firstValueFrom(
-      this.filesClient.send<boolean>('confirm-upload', payload),
+      this.filesClient.send<boolean>('confirm-upload', payload).pipe(
+        timeout(5000),
+        catchError((err: unknown) => {
+          this.logger.error(
+            {
+              err,
+              layer: 'gateway',
+              target: 'files',
+              action: 'confirm-upload',
+              userId: user.id,
+            },
+            'Upstream service request failed',
+          );
+
+          throw err;
+        }),
+      ),
     );
   }
 
   @GetReadUrlDocs()
   @Get('read-url')
-  async getReadUrl(@Query() dto: KeyDto) {
+  async getReadUrl(@Query() dto: KeyDto, @CurrentUser() user: UserDto) {
     const url = await firstValueFrom(
-      this.filesClient.send<string>('get-read-url', dto),
+      this.filesClient.send<string>('get-read-url', dto).pipe(
+        timeout(5000),
+        catchError((err: unknown) => {
+          this.logger.error(
+            {
+              err,
+              layer: 'gateway',
+              target: 'files',
+              action: 'get-read-url',
+              userId: user.id,
+              key: dto.key,
+            },
+            'Upstream service request failed',
+          );
+
+          throw err;
+        }),
+      ),
     );
 
     return { url };

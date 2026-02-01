@@ -9,11 +9,12 @@ import {
 } from '@nestjs/common';
 import { LoginDto, RegisterDto, RequestWithCookies } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, timeout } from 'rxjs';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { Tokens } from '@app/common/interfaces';
 import { LoginDocs, LogoutDocs, RefreshDocs, RegisterDocs } from './docs';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Controller('auth')
 export class AuthController {
@@ -21,6 +22,7 @@ export class AuthController {
     @Inject('auth')
     private readonly authClient: ClientProxy,
     private readonly authService: AuthService,
+    @InjectPinoLogger() private readonly logger: PinoLogger,
   ) {}
 
   @RegisterDocs()
@@ -30,7 +32,22 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { accessToken, refreshToken }: Tokens = await firstValueFrom(
-      this.authClient.send('register', registerDto),
+      this.authClient.send('register', registerDto).pipe(
+        timeout(5000),
+        catchError((err: unknown) => {
+          this.logger.error(
+            {
+              err,
+              layer: 'gateway',
+              target: 'auth',
+              action: 'register',
+            },
+            'Upstream service request failed',
+          );
+
+          throw err;
+        }),
+      ),
     );
 
     this.authService.addRefreshTokenToResponse(res, refreshToken);
@@ -46,7 +63,22 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { accessToken, refreshToken }: Tokens = await firstValueFrom(
-      this.authClient.send('login', loginDto),
+      this.authClient.send('login', loginDto).pipe(
+        timeout(5000),
+        catchError((err: unknown) => {
+          this.logger.error(
+            {
+              err,
+              layer: 'gateway',
+              target: 'auth',
+              action: 'login',
+            },
+            'Upstream service request failed',
+          );
+
+          throw err;
+        }),
+      ),
     );
 
     this.authService.addRefreshTokenToResponse(res, refreshToken);
@@ -64,9 +96,26 @@ export class AuthController {
     const refreshTokenFromCookie = req.cookies.refreshToken;
 
     const { accessToken, refreshToken }: Tokens = await firstValueFrom(
-      this.authClient.send('refresh', {
-        refreshToken: refreshTokenFromCookie,
-      }),
+      this.authClient
+        .send('refresh', {
+          refreshToken: refreshTokenFromCookie,
+        })
+        .pipe(
+          timeout(5000),
+          catchError((err: unknown) => {
+            this.logger.error(
+              {
+                err,
+                layer: 'gateway',
+                target: 'auth',
+                action: 'refresh',
+              },
+              'Upstream service request failed',
+            );
+
+            throw err;
+          }),
+        ),
     );
 
     this.authService.addRefreshTokenToResponse(res, refreshToken);

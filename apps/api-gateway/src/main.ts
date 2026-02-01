@@ -14,7 +14,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.use(cookieParser());
-  app.use(app.get(Logger));
+  app.useLogger(app.get(Logger));
 
   const config = new DocumentBuilder()
     .setTitle('Vaulted')
