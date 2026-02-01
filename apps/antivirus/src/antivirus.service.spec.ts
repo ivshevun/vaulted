@@ -1,4 +1,4 @@
-import { KeyPayload } from '@app/common';
+import { KeyPayload, pinoConfig } from '@app/common';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigModule } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
@@ -10,6 +10,7 @@ import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { of } from 'rxjs';
 import { Readable } from 'stream';
 import { AntivirusService } from './antivirus.service';
+import { LoggerModule } from 'nestjs-pino';
 
 const mockScanStream = jest.fn();
 
@@ -33,7 +34,10 @@ describe('AntivirusService', () => {
     expect.extend(matchers);
 
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ isGlobal: true })],
+      imports: [
+        await ConfigModule.forRoot({ isGlobal: true }),
+        LoggerModule.forRoot(pinoConfig),
+      ],
       providers: [
         AntivirusService,
         {

@@ -3,6 +3,8 @@ import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { ConfigService } from '@nestjs/config';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import { LoggerModule } from 'nestjs-pino';
+import { pinoConfig } from '@app/common';
 
 describe('NotificationsController', () => {
   let notificationsController: NotificationsController;
@@ -15,6 +17,7 @@ describe('NotificationsController', () => {
     configServiceMock.get.mockReturnValue(mockResendApiKey);
 
     const app: TestingModule = await Test.createTestingModule({
+      imports: [LoggerModule.forRoot(pinoConfig)],
       controllers: [NotificationsController],
       providers: [
         NotificationsService,

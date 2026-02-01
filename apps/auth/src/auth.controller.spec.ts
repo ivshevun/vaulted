@@ -3,12 +3,13 @@ import { AuthController } from './auth.controller';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { UsersService } from './users';
 import { TokenService } from './token';
-import { LoggerModule, LoginPayload, RegisterPayload } from '@app/common';
+import { LoginPayload, pinoConfig, RegisterPayload } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { firstValueFrom } from 'rxjs';
 import { PrismaService } from './prisma';
+import { LoggerModule } from 'nestjs-pino';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -35,7 +36,7 @@ describe('AuthController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         await ConfigModule.forRoot({ isGlobal: true }),
-        LoggerModule,
+        LoggerModule.forRoot(pinoConfig),
         JwtModule.register({}),
       ],
       controllers: [AuthController],

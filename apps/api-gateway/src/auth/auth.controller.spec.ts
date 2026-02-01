@@ -4,9 +4,16 @@ import { Test } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { ConfigModule } from '@nestjs/config';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { LoginDto, RegisterDto, RequestWithCookies, Tokens } from '@app/common';
+import {
+  LoginDto,
+  pinoConfig,
+  RegisterDto,
+  RequestWithCookies,
+  Tokens,
+} from '@app/common';
 import { Response } from 'express';
 import { of } from 'rxjs';
+import { LoggerModule } from 'nestjs-pino';
 
 describe('AuthController (API Gateway)', () => {
   let service: AuthService;
@@ -41,7 +48,10 @@ describe('AuthController (API Gateway)', () => {
     };
 
     const module = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ isGlobal: true })],
+      imports: [
+        await ConfigModule.forRoot({ isGlobal: true }),
+        LoggerModule.forRoot(pinoConfig),
+      ],
       controllers: [AuthController],
       providers: [
         {

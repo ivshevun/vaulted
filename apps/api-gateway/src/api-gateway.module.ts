@@ -4,6 +4,8 @@ import { FilesController } from './files/files.controller';
 import { FilesModule } from './files/files.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
+import { pinoConfig } from '@app/common';
 
 @Module({
   imports: [
@@ -39,6 +41,7 @@ import { ConfigService } from '@nestjs/config';
     ]),
     AuthModule,
     FilesModule,
+    LoggerModule.forRoot(pinoConfig),
   ],
   controllers: [FilesController],
   providers: [],

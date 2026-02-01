@@ -4,6 +4,8 @@ import { AntivirusService } from './antivirus.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { LoggerModule } from 'nestjs-pino';
+import { pinoConfig } from '@app/common';
 
 @Module({
   imports: [
@@ -34,6 +36,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         inject: [ConfigService],
       },
     ]),
+    LoggerModule.forRoot(pinoConfig),
   ],
   controllers: [AntivirusController],
   providers: [AntivirusService],

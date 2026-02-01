@@ -3,9 +3,12 @@ import { AntivirusModule } from './antivirus.module';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { MicroserviceExceptionFilter } from '@app/common';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AntivirusModule);
+  const app = await NestFactory.create(AntivirusModule, {
+    bufferLogs: true,
+  });
   const configService = app.get(ConfigService);
 
   app.connectMicroservice<MicroserviceOptions>({
@@ -18,6 +21,8 @@ async function bootstrap() {
       },
     },
   });
+
+  app.useLogger(app.get(Logger));
 
   app.useGlobalFilters(new MicroserviceExceptionFilter());
 

@@ -11,7 +11,6 @@ COPY .env.test .env.test
 COPY apps/files apps/files
 COPY libs libs
 
-
 RUN npm install -g pnpm
 RUN pnpm install
 RUN npx prisma generate --schema=apps/files/src/prisma/schema.prisma

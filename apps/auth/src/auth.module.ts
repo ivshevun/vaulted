@@ -7,7 +7,8 @@ import { TokenModule } from './token';
 import Joi from 'joi';
 import { JwtStrategy } from './strategies';
 import { PrismaModule } from './prisma';
-import { LoggerModule } from '@app/common';
+import { LoggerModule } from 'nestjs-pino';
+import { pinoConfig } from '@app/common';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { LoggerModule } from '@app/common';
         AUTH_DATABASE_URL: Joi.string().required(),
       }),
     }),
-    LoggerModule,
+    LoggerModule.forRoot(pinoConfig),
     PrismaModule,
     TokenModule,
   ],

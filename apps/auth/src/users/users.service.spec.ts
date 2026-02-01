@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
-import { RegisterDto } from '@app/common';
+import { pinoConfig, RegisterDto } from '@app/common';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { PrismaClient } from '@prisma/auth-client';
 import { v4 as uuidv4 } from 'uuid';
 import argon from 'argon2';
 import { PrismaService } from '../prisma';
+import { LoggerModule } from 'nestjs-pino';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -31,6 +32,7 @@ describe('UsersService', () => {
     prismaMock = mockDeep<PrismaClient>();
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [LoggerModule.forRoot(pinoConfig)],
       providers: [
         UsersService,
         { provide: PrismaService, useValue: prismaMock },
