@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -45,7 +45,7 @@ jobs:
           echo "${{ secrets.ENV_TEST }}" > .env
 
       - name: Install deps
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Clients
         run: |

@@ -16,7 +16,7 @@ COPY libs libs
 
 
 RUN npm install -g pnpm
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 RUN npx prisma generate --schema=apps/auth/src/prisma/schema.prisma
 RUN npx prisma generate --schema=apps/files/src/prisma/schema.prisma
 RUN pnpm run build api-gateway

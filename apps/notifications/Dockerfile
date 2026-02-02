@@ -12,7 +12,7 @@ COPY apps/notifications apps/notifications
 COPY libs libs
 
 RUN npm install -g pnpm
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 RUN pnpm run build notifications
 
 CMD ["pnpm", "start:dev", "notifications"]
