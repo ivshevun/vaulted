@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SendMailDto } from '@app/common';
 import { Resend } from 'resend';
 
 @Injectable()
@@ -14,7 +13,7 @@ export class NotificationsService {
     this.resend = new Resend(API_KEY);
   }
 
-  sendMail(dto: SendMailDto) {
+  sendMail() {
     this.logger.log('Sending mail...');
     // const { data, error } = await this.resend.emails.send({
     //   from: 'Vaulted Notifications <notifications@vaulted.digital>',
