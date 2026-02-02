@@ -36,22 +36,22 @@ export class TokenService {
   }
 
   private signAccessToken(payload: UserDto) {
-    const expirationSeconds = this.configService.get<string>(
-      'JWT_ACCESS_EXPIRATION_SECONDS',
-    )!;
+    const expirationSeconds = Number(
+      this.configService.get<string>('JWT_ACCESS_EXPIRATION_SECONDS')!,
+    );
 
     return this.jwtService.sign(payload, {
-      expiresIn: `${expirationSeconds}s`,
+      expiresIn: expirationSeconds,
     });
   }
 
   private signRefreshToken(payload: UserDto) {
-    const expirationDays = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRATION_DAYS',
-    )!;
+    const expirationSeconds = Number(
+      this.configService.get<string>('JWT_REFRESH_EXPIRATION_SECONDS')!,
+    );
 
     return this.jwtService.sign(payload, {
-      expiresIn: `${expirationDays}d`,
+      expiresIn: expirationSeconds,
     });
   }
 }
