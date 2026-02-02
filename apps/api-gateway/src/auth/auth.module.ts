@@ -9,6 +9,9 @@ import { AuthService } from './auth.service';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validationOptions: {
+        convert: true,
+      },
       validationSchema: Joi.object({
         AUTH_PORT: Joi.number().required(),
       }),

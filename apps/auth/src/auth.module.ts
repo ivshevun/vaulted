@@ -14,12 +14,24 @@ import { pinoConfig } from '@app/common';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validationOptions: {
+        convert: true,
+      },
       validationSchema: Joi.object({
-        POSTGRES_AUTH_USER: Joi.string().required(),
-        POSTGRES_AUTH_PASSWORD: Joi.string().required(),
-        POSTGRES_AUTH_DB: Joi.string().required(),
-        POSTGRES_AUTH_PORT: Joi.number().required(),
+        JWT_SECRET: Joi.string().required(),
+
+        JWT_ACCESS_EXPIRATION_SECONDS: Joi.number()
+          .integer()
+          .positive()
+          .required(),
+
+        JWT_REFRESH_EXPIRATION_SECONDS: Joi.number()
+          .integer()
+          .positive()
+          .required(),
+
         AUTH_DATABASE_URL: Joi.string().required(),
+        RABBITMQ_URL: Joi.string().required(),
       }),
     }),
     LoggerModule.forRoot(pinoConfig),

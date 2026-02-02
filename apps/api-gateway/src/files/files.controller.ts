@@ -57,7 +57,7 @@ export class FilesController {
                 action: 'get-upload-data',
                 userId: user.id,
               },
-              'Upstream service request failed',
+              'Files service request failed',
             );
 
             throw err;
@@ -89,7 +89,7 @@ export class FilesController {
               action: 'confirm-upload',
               userId: user.id,
             },
-            'Upstream service request failed',
+            'Files service request failed',
           );
 
           throw err;
@@ -114,7 +114,7 @@ export class FilesController {
               userId: user.id,
               key: dto.key,
             },
-            'Upstream service request failed',
+            'Files service request failed',
           );
 
           throw err;

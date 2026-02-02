@@ -42,7 +42,7 @@ export class AuthController {
               target: 'auth',
               action: 'register',
             },
-            'Upstream service request failed',
+            'Auth service request failed',
           );
 
           throw err;
@@ -73,7 +73,7 @@ export class AuthController {
               target: 'auth',
               action: 'login',
             },
-            'Upstream service request failed',
+            'Auth service request failed',
           );
 
           throw err;
@@ -110,7 +110,7 @@ export class AuthController {
                 target: 'auth',
                 action: 'refresh',
               },
-              'Upstream service request failed',
+              'Auth service request failed',
             );
 
             throw err;
