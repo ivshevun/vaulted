@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { MicroserviceExceptionFilter } from '@app/common';
 import { Logger } from 'nestjs-pino';
+import { RMQ_EXCHANGE } from '@app/common/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AntivirusModule, {
@@ -19,6 +20,9 @@ async function bootstrap() {
       queueOptions: {
         durable: true,
       },
+      wildcards: true,
+      exchangeType: 'topic',
+      exchange: RMQ_EXCHANGE,
     },
   });
 
