@@ -6,6 +6,7 @@ import Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
+import { RMQ_EXCHANGE } from '@app/common/constants';
 
 @Module({
   imports: [
@@ -22,15 +23,14 @@ import { pinoConfig } from '@app/common';
     }),
     ClientsModule.registerAsync([
       {
-        name: 'files',
+        name: RMQ_EXCHANGE,
         useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')!],
-            queue: 'files_queue',
-            queueOptions: {
-              durable: true,
-            },
+            exchange: RMQ_EXCHANGE,
+            exchangeType: 'topic',
+            wildcards: true,
           },
         }),
         inject: [ConfigService],

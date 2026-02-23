@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from './prisma';
 import { pinoConfig } from '@app/common';
 import { LoggerModule } from 'nestjs-pino';
@@ -24,22 +23,6 @@ import { LoggerModule } from 'nestjs-pino';
         AWS_S3_BUCKET_NAME: Joi.string().required(),
       }),
     }),
-    ClientsModule.registerAsync([
-      {
-        name: 'antivirus',
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [configService.get<string>('RABBITMQ_URL')!],
-            queue: 'antivirus_queue',
-            queueOptions: {
-              durable: true,
-            },
-          },
-        }),
-        inject: [ConfigService],
-      },
-    ]),
   ],
   controllers: [FilesController],
   providers: [FilesService],

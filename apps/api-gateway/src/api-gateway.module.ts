@@ -6,6 +6,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
+import { RMQ_EXCHANGE } from '@app/common/constants';
 
 @Module({
   imports: [
@@ -34,6 +35,21 @@ import { pinoConfig } from '@app/common';
             queueOptions: {
               durable: true,
             },
+            wildcards: true,
+            exchangeType: 'topic',
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: RMQ_EXCHANGE,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL')!],
+            exchange: RMQ_EXCHANGE,
+            exchangeType: 'topic',
+            wildcards: true,
           },
         }),
         inject: [ConfigService],

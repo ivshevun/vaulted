@@ -1,5 +1,5 @@
 import { GetUploadDataPayload } from './get-upload-data.payload';
 
-export class ConfirmUploadPayload extends GetUploadDataPayload {
+export class FileUploadedPayload extends GetUploadDataPayload {
   key: string;
 }

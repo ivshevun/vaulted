@@ -12,7 +12,7 @@ async function bootstrap() {
   });
 
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.use(cookieParser());
   app.useLogger(app.get(Logger));
 

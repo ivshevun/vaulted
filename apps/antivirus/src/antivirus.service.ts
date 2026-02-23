@@ -1,23 +1,29 @@
-import { createS3Client, KeyPayload } from '@app/common';
+import { createS3Client, FileUploadedPayload } from '@app/common';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
 import Nodeclam from 'clamscan';
 import { Readable } from 'stream';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { RMQ_EXCHANGE } from '@app/common/constants';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AntivirusService {
   constructor(
-    @Inject('files') private readonly filesClient: ClientProxy,
     private readonly configService: ConfigService,
+    @Inject(RMQ_EXCHANGE) private readonly eventBus: ClientProxy,
     @InjectPinoLogger() private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(AntivirusService.name);
   }
 
-  async scan({ key }: KeyPayload): Promise<boolean> {
+  async scan({
+    key,
+    userId,
+    contentType,
+    filename,
+  }: FileUploadedPayload): Promise<void> {
     this.logger.info({ key }, 'Starting virus scan');
 
     try {
@@ -29,7 +35,17 @@ export class AntivirusService {
 
       this.logger.info({ key, isInfected }, 'Virus scan finished');
 
-      return isInfected;
+      if (isInfected) {
+        this.eventBus.emit('file.scan.infected', { key });
+        return;
+      }
+
+      this.eventBus.emit('file.scan.clear', {
+        key,
+        userId,
+        contentType,
+        filename,
+      });
     } catch (err: unknown) {
       this.logger.error({ key, err }, 'Virus scan failed');
 

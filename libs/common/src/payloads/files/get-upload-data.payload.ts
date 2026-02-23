@@ -1,5 +1,5 @@
-import { GetUploadDataDto } from '@app/common';
-
-export class GetUploadDataPayload extends GetUploadDataDto {
+export class GetUploadDataPayload {
+  filename: string;
+  contentType: string;
   userId: string;
 }

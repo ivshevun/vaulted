@@ -1,6 +1,6 @@
 import {
-  ConfirmUploadDto,
-  ConfirmUploadPayload,
+  FileUploadedDto,
+  FileUploadedPayload,
   GetUploadDataDto,
   GetUploadDataPayload,
   JwtGuard,
@@ -21,13 +21,16 @@ import { catchError, firstValueFrom, timeout } from 'rxjs';
 import { CurrentUser } from '../decorators';
 import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { RMQ_EXCHANGE } from '@app/common/constants';
 
 @UseGuards(JwtGuard)
 @Controller('files')
 export class FilesController {
   constructor(
     @Inject('files') private readonly filesClient: ClientProxy,
-    @InjectPinoLogger() private readonly logger: PinoLogger,
+    @Inject(RMQ_EXCHANGE) private readonly eventBus: ClientProxy,
+    @InjectPinoLogger()
+    private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(FilesController.name);
   }
@@ -68,34 +71,16 @@ export class FilesController {
 
   @ConfirmUploadDocs()
   @Post('confirm-upload')
-  async confirmUpload(
-    @Body() dto: ConfirmUploadDto,
-    @CurrentUser() user: UserDto,
-  ) {
-    const payload: ConfirmUploadPayload = {
+  confirmUpload(@Body() dto: FileUploadedDto, @CurrentUser() user: UserDto) {
+    const payload: FileUploadedPayload = {
       ...dto,
       userId: user.id,
     };
 
-    return await firstValueFrom(
-      this.filesClient.send<boolean>('confirm-upload', payload).pipe(
-        timeout(5000),
-        catchError((err: unknown) => {
-          this.logger.error(
-            {
-              err,
-              layer: 'gateway',
-              target: 'files',
-              action: 'confirm-upload',
-              userId: user.id,
-            },
-            'Files service request failed',
-          );
+    this.eventBus.emit('file.uploaded', payload);
 
-          throw err;
-        }),
-      ),
-    );
+    // TODO
+    return true;
   }
 
   @GetReadUrlDocs()

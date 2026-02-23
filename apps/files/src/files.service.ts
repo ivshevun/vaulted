@@ -1,6 +1,6 @@
 import {
-  ConfirmUploadPayload,
   createS3Client,
+  FileUploadedPayload,
   GetUploadDataPayload,
   KeyDto,
   KeyPayload,
@@ -13,12 +13,10 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { RpcException } from '@nestjs/microservices';
 import { v4 as uuid } from 'uuid';
-import { CreateFileType } from './types';
 import { getFileSize } from './utils';
 import { PrismaService } from './prisma';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
@@ -29,7 +27,6 @@ export class FilesService {
   private readonly bucketName: string;
 
   constructor(
-    @Inject('antivirus') private readonly antivirusClient: ClientProxy,
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
     @InjectPinoLogger() private readonly logger: PinoLogger,
@@ -46,7 +43,7 @@ export class FilesService {
       'Generating upload URL',
     );
 
-    const key = `${userId}/${filename}-${uuid()}`;
+    const key = `${userId}/${uuid()}`;
 
     try {
       const command = new PutObjectCommand({
@@ -72,44 +69,44 @@ export class FilesService {
     }
   }
 
-  async confirmUpload(payload: ConfirmUploadPayload) {
-    const { key, userId } = payload;
-
-    this.logger.info({ key, userId }, 'Confirming file upload');
-
-    try {
-      await this.isObjectExistsOrThrow({ key });
-
-      this.logger.debug({ key }, 'Sending file to antivirus service');
-
-      const isInfected = await firstValueFrom<boolean>(
-        this.antivirusClient.send('scan', { key }),
-      );
-
-      if (isInfected) {
-        this.logger.warn({ key, userId }, 'File infected, deleting');
-
-        await this.onInfected({ key });
-
-        return false;
-      }
-
-      const fileSize = await getFileSize(this.s3, this.bucketName, key);
-
-      await this.onClearFile({
-        ...payload,
-        size: fileSize,
-      });
-
-      this.logger.info({ key, userId, fileSize }, 'File accepted and saved');
-
-      return true;
-    } catch (err: unknown) {
-      this.logger.error({ key, userId, err }, 'Upload confirmation failed');
-
-      throw err;
-    }
-  }
+  // async confirmUpload(payload: FileUploadedPayload) {
+  //   const { key, userId } = payload;
+  //
+  //   this.logger.info({ key, userId }, 'Confirming file upload');
+  //
+  //   try {
+  //     await this.isObjectExistsOrThrow({ key });
+  //
+  //     this.logger.debug({ key }, 'Sending file to antivirus service');
+  //
+  //     const isInfected = await firstValueFrom<boolean>(
+  //       this.antivirusClient.send('scan', { key }),
+  //     );
+  //
+  //     if (isInfected) {
+  //       this.logger.warn({ key, userId }, 'File infected, deleting');
+  //
+  //       await this.onInfected({ key });
+  //
+  //       return false;
+  //     }
+  //
+  //     const fileSize = await getFileSize(this.s3, this.bucketName, key);
+  //
+  //     await this.onClearFile({
+  //       ...payload,
+  //       size: fileSize,
+  //     });
+  //
+  //     this.logger.info({ key, userId, fileSize }, 'File accepted and saved');
+  //
+  //     return true;
+  //   } catch (err: unknown) {
+  //     this.logger.error({ key, userId, err }, 'Upload confirmation failed');
+  //
+  //     throw err;
+  //   }
+  // }
 
   async getReadUrl({ key, userId }: KeyDto & { userId?: string }) {
     this.logger.info({ key, userId }, 'Generating download URL');
@@ -158,25 +155,34 @@ export class FilesService {
     }
   }
 
-  async onClearFile(file: CreateFileType) {
-    this.logger.info(
-      {
-        key: file.key,
-        userId: file.userId,
-        size: file.size,
-      },
-      'Saving file metadata',
-    );
-
+  async onClearFile(payload: FileUploadedPayload) {
     try {
-      return await this.prismaService.file.create({
-        data: file,
+      const fileSize = await getFileSize(this.s3, this.bucketName, payload.key);
+
+      this.logger.info(
+        {
+          key: payload.key,
+          userId: payload.userId,
+          size: fileSize,
+        },
+        'Saving file metadata',
+      );
+
+      return await this.prismaService.file.upsert({
+        where: {
+          key: payload.key,
+        },
+        create: {
+          ...payload,
+          size: fileSize,
+        },
+        update: {},
       });
     } catch (err: unknown) {
       this.logger.error(
         {
-          key: file.key,
-          userId: file.userId,
+          key: payload.key,
+          userId: payload.userId,
           err,
         },
         'Failed to save file record',
