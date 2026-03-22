@@ -9,14 +9,14 @@ import { CreateFileType } from './types';
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  @MessagePattern('get-upload-data')
+  @MessagePattern('file.get-upload-data')
   async getUploadData(@Payload() getUploadDataPayload: GetUploadDataPayload) {
     const url = await this.filesService.getUploadData(getUploadDataPayload);
 
     return of(url);
   }
 
-  @MessagePattern('get-read-url')
+  @MessagePattern('file.get-read-url')
   async getReadUrl(@Payload() getReadUrlPayload: KeyPayload) {
     const url = await this.filesService.getReadUrl(getReadUrlPayload);
 

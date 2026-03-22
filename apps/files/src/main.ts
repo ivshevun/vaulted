@@ -22,7 +22,7 @@ async function bootstrap() {
       wildcards: true,
       exchangeType: 'topic',
       exchange: RMQ_EXCHANGE,
-      routingKey: 'file.scan.*',
+      routingKey: 'file.*',
     },
   });
 

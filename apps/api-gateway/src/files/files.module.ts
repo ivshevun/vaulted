@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
+import { RMQ_EXCHANGE } from '@app/common/constants';
 
 @Module({
   imports: [
@@ -13,6 +14,19 @@ import Joi from 'joi';
       }),
     }),
     ClientsModule.registerAsync([
+      {
+        name: RMQ_EXCHANGE,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL')!],
+            exchange: RMQ_EXCHANGE,
+            exchangeType: 'topic',
+            wildcards: true,
+          },
+        }),
+        inject: [ConfigService],
+      },
       {
         name: 'auth',
         useFactory: (configService: ConfigService) => ({

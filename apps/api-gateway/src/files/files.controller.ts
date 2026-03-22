@@ -47,8 +47,8 @@ export class FilesController {
     };
 
     return await firstValueFrom(
-      this.filesClient
-        .send<{ url: string; key: string }>('get-upload-data', payload)
+      this.eventBus
+        .send<{ url: string; key: string }>('file.get-upload-data', payload)
         .pipe(
           timeout(5000),
           catchError((err: unknown) => {
@@ -87,7 +87,7 @@ export class FilesController {
   @Get('read-url')
   async getReadUrl(@Query() dto: KeyDto, @CurrentUser() user: UserDto) {
     const url = await firstValueFrom(
-      this.filesClient.send<string>('get-read-url', dto).pipe(
+      this.eventBus.send<string>('file.get-read-url', dto).pipe(
         timeout(5000),
         catchError((err: unknown) => {
           this.logger.error(
