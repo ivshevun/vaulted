@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from './auth.controller';
+import { AuthController } from '../../src/auth.controller';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { UsersService } from './users';
-import { TokenService } from './token';
+import { UsersService } from '../../src/users';
+import { TokenService } from '../../src/token';
 import { LoginPayload, pinoConfig, RegisterPayload } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthService } from './auth.service';
+import { AuthService } from '../../src/auth.service';
 import { firstValueFrom } from 'rxjs';
-import { PrismaService } from './prisma';
+import { PrismaService } from '../../src/prisma';
 import { LoggerModule } from 'nestjs-pino';
 
 describe('AuthController', () => {

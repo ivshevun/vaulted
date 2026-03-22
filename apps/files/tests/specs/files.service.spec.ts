@@ -16,8 +16,8 @@ import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
 import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { of } from 'rxjs';
-import { FilesService } from './files.service';
-import { PrismaService } from './prisma';
+import { FilesService } from '../../src/files.service';
+import { PrismaService } from '../../src/prisma';
 import { LoggerModule } from 'nestjs-pino';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({

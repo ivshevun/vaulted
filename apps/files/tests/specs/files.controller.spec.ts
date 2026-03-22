@@ -8,8 +8,8 @@ import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { firstValueFrom } from 'rxjs';
-import { FilesController } from './files.controller';
-import { FilesService } from './files.service';
+import { FilesController } from '../../src/files.controller';
+import { FilesService } from '../../src/files.service';
 import { LoggerModule } from 'nestjs-pino';
 
 describe('FilesController', () => {

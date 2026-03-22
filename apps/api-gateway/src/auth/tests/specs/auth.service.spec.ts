@@ -1,4 +1,4 @@
-import { AuthService } from './auth.service';
+import { AuthService } from '../../src/auth.service';
 import { Test } from '@nestjs/testing';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Response } from 'express';

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { FilesController } from './files/files.controller';
-import { FilesModule } from './files/files.module';
+import { AuthModule } from './auth/src/auth.module';
+import { FilesController } from './files/src/files.controller';
+import { FilesModule } from './files/src/files.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';

@@ -18,7 +18,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { catchError, firstValueFrom, timeout } from 'rxjs';
-import { CurrentUser } from '../decorators';
+import { CurrentUser } from '../../decorators';
 import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { RMQ_EXCHANGE } from '@app/common/constants';

@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { UsersService } from './users';
+import { UsersService } from './users/src/users.service';
 import { LoginDto, RegisterDto } from '@app/common';
 import { TokenService } from './token';
 import argon from 'argon2';

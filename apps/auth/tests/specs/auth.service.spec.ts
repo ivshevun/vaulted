@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { UsersService } from './users';
-import { TokenService } from './token';
+import { AuthService } from '../../src/auth.service';
+import { UsersService } from '../../src/users';
+import { TokenService } from '../../src/token';
 import { LoginDto, pinoConfig, RegisterDto } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -10,8 +10,8 @@ import { v4 as uuid } from 'uuid';
 import { User } from '@prisma/auth-client';
 import { HttpStatus } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { convertToUserDto } from './utils';
-import { PrismaService } from './prisma';
+import { convertToUserDto } from '../../src/utils';
+import { PrismaService } from '../../src/prisma';
 import { LoggerModule } from 'nestjs-pino';
 
 describe('AuthService', () => {

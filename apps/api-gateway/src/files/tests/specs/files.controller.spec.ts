@@ -13,7 +13,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { File } from '@prisma/files-client';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { of, throwError } from 'rxjs';
-import { FilesController } from './files.controller';
+import { FilesController } from '../../src/files.controller';
 import { LoggerModule } from 'nestjs-pino';
 
 describe('FilesController', () => {

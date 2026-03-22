@@ -1,7 +1,7 @@
-import { AuthController } from './auth.controller';
+import { AuthController } from '../../src/auth.controller';
 import { ClientProxy } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { AuthService } from './auth.service';
+import { AuthService } from '../../src/auth.service';
 import { ConfigModule } from '@nestjs/config';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import {

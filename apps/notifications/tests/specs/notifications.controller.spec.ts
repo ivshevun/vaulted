@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationsController } from './notifications.controller';
-import { NotificationsService } from './notifications.service';
+import { NotificationsController } from '../../src/notifications.controller';
+import { NotificationsService } from '../../src/notifications.service';
 import { ConfigService } from '@nestjs/config';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { LoggerModule } from 'nestjs-pino';
