@@ -1,5 +1,5 @@
 import { pinoConfig } from '@app/common';
-import { S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigModule } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -8,6 +8,14 @@ import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { AntivirusService } from '../../src/antivirus.service';
 import { LoggerModule } from 'nestjs-pino';
+import { makeFileUploadedPayload } from '../utils';
+import {
+  FILE_SCAN_CLEAR,
+  FILE_SCAN_INFECTED,
+  RMQ_EXCHANGE,
+} from '@app/common/constants';
+import { Readable } from 'stream';
+import { sdkStreamMixin } from '@smithy/util-stream';
 
 const mockScanStream = jest.fn();
 
@@ -38,16 +46,93 @@ describe('AntivirusService', () => {
       providers: [
         AntivirusService,
         {
-          provide: 'files',
+          provide: RMQ_EXCHANGE,
           useValue: filesProxyMock,
         },
       ],
     }).compile();
 
+    s3Mock.on(GetObjectCommand).resolves({
+      Body: sdkStreamMixin(Readable.from([''])),
+    });
+
     service = module.get<AntivirusService>(AntivirusService);
   });
 
-  describe('when file is clean', () => {});
+  describe('scan', () => {
+    describe('when scan file is clear', () => {
+      beforeEach(() => {
+        mockScanStream.mockResolvedValue({
+          isInfected: false,
+        });
+      });
 
-  describe('when file is infected', () => {});
+      it('should notify that file is clear', async () => {
+        const payload = makeFileUploadedPayload();
+
+        await service.scan(payload);
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(
+          FILE_SCAN_CLEAR,
+          payload,
+        );
+      });
+    });
+    describe('when file is infected', () => {
+      beforeEach(() => {
+        mockScanStream.mockResolvedValue({
+          isInfected: true,
+        });
+      });
+
+      it('should notify that file is infected', async () => {
+        const payload = makeFileUploadedPayload();
+
+        await service.scan(payload);
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_INFECTED, {
+          key: payload.key,
+        });
+      });
+    });
+    describe('when s3 download fails', () => {
+      const s3UnavailableMessage = 'S3 unavailable';
+
+      beforeEach(() => {
+        s3Mock.on(GetObjectCommand).rejects(new Error(s3UnavailableMessage));
+      });
+      it('should rethrow the error', async () => {
+        const payload = makeFileUploadedPayload();
+        await expect(service.scan(payload)).rejects.toThrow(
+          s3UnavailableMessage,
+        );
+      });
+      it('should emit nothing', async () => {
+        const payload = makeFileUploadedPayload();
+
+        await service.scan(payload).catch(() => {});
+
+        expect(filesProxyMock.emit).not.toHaveBeenCalled();
+      });
+    });
+    describe('when ClamAV throws', () => {
+      const clamAVErrorMessage = 'ClamAV crashed';
+
+      beforeEach(() => {
+        mockScanStream.mockRejectedValue(new Error(clamAVErrorMessage));
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.scan(makeFileUploadedPayload())).rejects.toThrow(
+          clamAVErrorMessage,
+        );
+      });
+
+      it('should emit nothing', async () => {
+        await service.scan(makeFileUploadedPayload()).catch(() => {});
+
+        expect(filesProxyMock.emit).not.toHaveBeenCalled();
+      });
+    });
+  });
 });
