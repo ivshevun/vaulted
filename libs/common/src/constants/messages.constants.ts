@@ -1,0 +1,7 @@
+export const PING = 'ping';
+export const REGISTER = 'register';
+export const LOGIN = 'login';
+export const REFRESH = 'refresh';
+export const AUTHORIZE = 'authorize';
+export const FILE_GET_UPLOAD_DATA = 'file.get-upload-data';
+export const FILE_GET_READ_URL = 'file.get-read-url';

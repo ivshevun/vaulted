@@ -4,31 +4,37 @@ import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { FilesService } from './files.service';
 import { CreateFileType } from './types';
+import {
+  FILE_GET_READ_URL,
+  FILE_GET_UPLOAD_DATA,
+  FILE_SCAN_CLEAR,
+  FILE_SCAN_INFECTED,
+} from '@app/common/constants';
 
 @Controller()
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  @MessagePattern('file.get-upload-data')
+  @MessagePattern(FILE_GET_UPLOAD_DATA)
   async getUploadData(@Payload() getUploadDataPayload: GetUploadDataPayload) {
     const url = await this.filesService.getUploadData(getUploadDataPayload);
 
     return of(url);
   }
 
-  @MessagePattern('file.get-read-url')
+  @MessagePattern(FILE_GET_READ_URL)
   async getReadUrl(@Payload() getReadUrlPayload: KeyPayload) {
     const url = await this.filesService.getReadUrl(getReadUrlPayload);
 
     return of(url);
   }
 
-  @EventPattern('file.scan.infected')
+  @EventPattern(FILE_SCAN_INFECTED)
   async onInfected(@Payload() payload: KeyPayload) {
     await this.filesService.onInfected(payload);
   }
 
-  @EventPattern('file.scan.clear')
+  @EventPattern(FILE_SCAN_CLEAR)
   async onClearFile(@Payload() payload: CreateFileType) {
     await this.filesService.onClearFile(payload);
   }
