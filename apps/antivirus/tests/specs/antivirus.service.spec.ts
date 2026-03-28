@@ -8,7 +8,7 @@ import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { AntivirusService } from '../../src/antivirus.service';
 import { LoggerModule } from 'nestjs-pino';
-import { makeFileUploadedPayload } from '../utils';
+import { makeFileUploadedPayload } from '@app/common-tests';
 import {
   FILE_SCAN_CLEAR,
   FILE_SCAN_INFECTED,

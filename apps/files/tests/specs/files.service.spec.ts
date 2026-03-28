@@ -1,24 +1,22 @@
-import {
-  ConfirmUploadPayload,
-  GetUploadDataPayload,
-  pinoConfig,
-} from '@app/common';
+import { pinoConfig } from '@app/common';
 import {
   DeleteObjectCommand,
   HeadObjectCommand,
+  PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { HttpStatus } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
+import { RpcException } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
 import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { of } from 'rxjs';
+import { LoggerModule } from 'nestjs-pino';
 import { FilesService } from '../../src/files.service';
 import { PrismaService } from '../../src/prisma';
-import { LoggerModule } from 'nestjs-pino';
+import { makeFileUploadedPayload } from '@app/common-tests';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
@@ -28,22 +26,9 @@ describe('FilesService', () => {
   let service: FilesService;
   let prismaServiceMock: DeepMockProxy<PrismaService>;
   let s3Mock: AwsClientStub<S3Client>;
-  let antivirusProxyMock: DeepMockProxy<ClientProxy>;
-
-  const mockFile = {
-    id: 'id',
-    key: 'file-key',
-    filename: 'avatar.png',
-    contentType: 'image/png',
-    size: 123,
-    userId: 'user-id',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
 
   beforeEach(async () => {
     prismaServiceMock = mockDeep();
-    antivirusProxyMock = mockDeep();
     s3Mock = mockClient(S3Client);
 
     expect.extend(matchers);
@@ -56,130 +41,194 @@ describe('FilesService', () => {
       providers: [
         FilesService,
         { provide: PrismaService, useValue: prismaServiceMock },
-        { provide: 'antivirus', useValue: antivirusProxyMock },
       ],
     }).compile();
-
-    antivirusProxyMock.send.mockReturnValue(of(false));
 
     service = module.get<FilesService>(FilesService);
   });
 
   describe('getUploadData', () => {
-    it('should return signed upload URL with a key', async () => {
+    const payload = makeFileUploadedPayload();
+
+    describe('when presigner succeeds', () => {
       const mockUrl = 'https://mock-s3-url.com/upload';
-      (getSignedUrl as jest.Mock).mockResolvedValue(mockUrl);
 
-      const payload: GetUploadDataPayload = {
-        filename: 'avatar.png',
-        contentType: 'image/png',
-        userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
-      };
-
-      const result = await service.getUploadData(payload);
-
-      expect(result.url).toBeDefined();
-      expect(result.key).toBeDefined();
-      expect(getSignedUrl).toHaveBeenCalled();
-    });
-  });
-
-  describe('confirmUpload', () => {
-    const payload: ConfirmUploadPayload = {
-      key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-      filename: 'avatar.png',
-      contentType: 'image/png',
-      userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
-    };
-
-    it('should throw a 404 if object is not in the bucket', async () => {
-      s3Mock.on(HeadObjectCommand).rejects(new Error('File not found'));
-
-      await expect(service.confirmUpload(payload)).rejects.toThrow(
-        'File not found',
-      );
-    });
-
-    it('should send a request for scanning a file', async () => {
-      s3Mock.on(HeadObjectCommand).resolves({
-        ContentLength: 1000,
+      beforeEach(() => {
+        (getSignedUrl as jest.Mock).mockResolvedValue(mockUrl);
       });
 
-      await service.confirmUpload(payload);
+      it('should return a signed upload URL', async () => {
+        const result = await service.getUploadData(payload);
 
-      expect(antivirusProxyMock.send).toHaveBeenCalledWith('scan', {
-        key: payload.key,
+        expect(result.url).toBe(mockUrl);
+      });
+
+      it('should return a key', async () => {
+        const result = await service.getUploadData(payload);
+
+        expect(result.key).toBeDefined();
+      });
+
+      it('should use PutObjectCommand', async () => {
+        await service.getUploadData(payload);
+
+        expect(getSignedUrl).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(PutObjectCommand),
+          expect.anything(),
+        );
       });
     });
 
-    it('should call prismaService.file.create', async () => {
-      s3Mock.on(HeadObjectCommand).resolves({
-        ContentLength: 1000,
+    describe('when presigner fails', () => {
+      const presignerError = new Error('Presigner unavailable');
+
+      beforeEach(() => {
+        (getSignedUrl as jest.Mock).mockRejectedValue(presignerError);
       });
 
-      await service.confirmUpload(payload);
-
-      expect(prismaServiceMock.file.create).toHaveBeenCalled();
-    });
-
-    it('should get fileSize by calling s3.HeadObjectCommand', async () => {
-      s3Mock.on(HeadObjectCommand).resolves({
-        ContentLength: 1000,
+      it('should rethrow the error', async () => {
+        await expect(service.getUploadData(payload)).rejects.toThrow(
+          presignerError,
+        );
       });
-
-      await service.confirmUpload(payload);
-
-      expect(
-        s3Mock.commandCalls(HeadObjectCommand).length,
-      ).toBeGreaterThanOrEqual(1);
     });
   });
 
   describe('getReadUrl', () => {
-    it('should return signed upload url for reading purposes', async () => {
-      const mockUrl = 'https://mock-s3-url.com';
-      (getSignedUrl as jest.Mock).mockResolvedValue(mockUrl);
+    const payload = makeFileUploadedPayload();
 
-      prismaServiceMock.file.findFirst.mockResolvedValue(mockFile);
+    describe('when file exists in S3', () => {
+      const mockUrl = 'https://mock-s3-url.com/read';
 
-      const payload = {
-        key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-      };
+      beforeEach(() => {
+        s3Mock.on(HeadObjectCommand).resolves({});
+        (getSignedUrl as jest.Mock).mockResolvedValue(mockUrl);
+      });
 
-      const url = await service.getReadUrl(payload);
+      it('should return a signed read URL', async () => {
+        const result = await service.getReadUrl(payload);
 
-      expect(url).toBe(mockUrl);
+        expect(result).toBe(mockUrl);
+      });
     });
 
-    it('should return a 404 rpc exception if file is not found', async () => {
-      s3Mock.on(HeadObjectCommand).rejects(new Error('File not found'));
+    describe('when file does not exist in S3', () => {
+      beforeEach(() => {
+        s3Mock.on(HeadObjectCommand).rejects(new Error('NoSuchKey'));
+      });
 
-      const payload = {
-        key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-      };
+      it('should throw an RpcException with NOT_FOUND status', async () => {
+        await expect(service.getReadUrl(payload)).rejects.toThrow(RpcException);
+      });
 
-      await expect(service.getReadUrl(payload)).rejects.toThrow(
-        'File not found',
-      );
+      it('should include NOT_FOUND status in the exception', async () => {
+        await expect(service.getReadUrl(payload)).rejects.toMatchObject(
+          new RpcException({
+            message: 'File not found',
+            status: HttpStatus.NOT_FOUND,
+          }),
+        );
+      });
     });
   });
 
   describe('onInfected', () => {
-    it('should call s3.send with DeleteObjectCommand', async () => {
-      await service.onInfected({ key: 'file-key' });
+    const payload = { key: 'infected-file-key' };
 
-      expect(s3Mock).toHaveReceivedCommand(DeleteObjectCommand);
+    describe('when S3 delete succeeds', () => {
+      beforeEach(() => {
+        s3Mock.on(DeleteObjectCommand).resolves({});
+      });
+
+      it('should delete the file from S3', async () => {
+        await service.onInfected(payload);
+
+        expect(s3Mock).toHaveReceivedCommandWith(DeleteObjectCommand, {
+          Key: payload.key,
+        });
+      });
     });
-    it.todo(
-      'should call notificationsClient.send with "notify-infected" and correct payload',
-    );
+
+    describe('when S3 delete fails', () => {
+      const s3Error = new Error('S3 unavailable');
+
+      beforeEach(() => {
+        s3Mock.on(DeleteObjectCommand).rejects(s3Error);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.onInfected(payload)).rejects.toThrow(s3Error);
+      });
+    });
   });
 
   describe('onClearFile', () => {
-    it('should call prisma.file.create', async () => {
-      await service.onClearFile(mockFile);
+    const payload = makeFileUploadedPayload();
+    const fileSize = 2048;
+    const mockFileRecord = {
+      id: 'file-id',
+      key: payload.key,
+      filename: payload.filename,
+      contentType: payload.contentType,
+      userId: payload.userId,
+      size: fileSize,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-      expect(prismaServiceMock.file.create).toHaveBeenCalled();
+    describe('when S3 and database succeed', () => {
+      beforeEach(() => {
+        s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
+        prismaServiceMock.file.upsert.mockResolvedValue(mockFileRecord);
+      });
+
+      it('should save file metadata with the size from S3', async () => {
+        await service.onClearFile(payload);
+
+        expect(prismaServiceMock.file.upsert).toHaveBeenCalledWith(
+          expect.objectContaining({
+            create: { ...payload, size: fileSize },
+          }),
+        );
+      });
+
+      it('should return the saved file record', async () => {
+        const result = await service.onClearFile(payload);
+
+        expect(result).toBe(mockFileRecord);
+      });
+    });
+
+    describe('when S3 HeadObject fails', () => {
+      const s3Error = new Error('S3 unavailable');
+
+      beforeEach(() => {
+        s3Mock.on(HeadObjectCommand).rejects(s3Error);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.onClearFile(payload)).rejects.toThrow(s3Error);
+      });
+
+      it('should not save anything to the database', async () => {
+        await service.onClearFile(payload).catch(() => {});
+
+        expect(prismaServiceMock.file.upsert).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when database upsert fails', () => {
+      const dbError = new Error('DB connection lost');
+
+      beforeEach(() => {
+        s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
+        prismaServiceMock.file.upsert.mockRejectedValue(dbError);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.onClearFile(payload)).rejects.toThrow(dbError);
+      });
     });
   });
 });
