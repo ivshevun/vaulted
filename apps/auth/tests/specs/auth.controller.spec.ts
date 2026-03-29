@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../../src/auth.controller';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { UsersService } from '../../src/users';
 import { TokenService } from '../../src/token';
 import { LoginPayload, pinoConfig, RegisterPayload } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
@@ -10,6 +9,7 @@ import { AuthService } from '../../src/auth.service';
 import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../../src/prisma';
 import { LoggerModule } from 'nestjs-pino';
+import { UsersService } from '@apps/auth/src/users/src/users.service';
 
 describe('AuthController', () => {
   let controller: AuthController;

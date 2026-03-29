@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../../src/auth.service';
-import { UsersService } from '../../src/users';
 import { TokenService } from '../../src/token';
 import { LoginDto, pinoConfig, RegisterDto } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
@@ -13,6 +12,7 @@ import { RpcException } from '@nestjs/microservices';
 import { convertToUserDto } from '../../src/utils';
 import { PrismaService } from '../../src/prisma';
 import { LoggerModule } from 'nestjs-pino';
+import { UsersService } from '@apps/auth/src/users/src/users.service';
 
 describe('AuthService', () => {
   let service: AuthService;
