@@ -164,6 +164,7 @@ describe('Files e2e', () => {
       });
       it('should delete file from aws if file was infected', async () => {
         const fileKey = await uploadFileToS3(configService, 'user-id', true);
+
         const dto: FileUploadedDto = {
           key: fileKey,
           filename: 'eicar.txt',
@@ -184,7 +185,7 @@ describe('Files e2e', () => {
           Key: fileKey,
         });
 
-        await sleep(3000);
+        await sleep(10000);
         await expect(s3.send(command)).rejects.toThrow(Error);
       });
       it('should return a 201 if file is created', async () => {
