@@ -1,14 +1,10 @@
-import {
-  ConfirmUploadDto,
-  createS3Client,
-  GetUploadDataDto,
-} from '@app/common';
+import { createS3Client, FileUploadedDto, GetUploadDataDto } from '@app/common';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Server } from 'http';
 import request from 'supertest';
-import { setupE2e, uploadFileToS3 } from '../utils';
+import { setupE2e, sleep, uploadFileToS3 } from '../utils';
 import { v4 as uuid } from 'uuid';
 import { PrismaService as FilesPrismaService } from '@apps/files/src/prisma';
 
@@ -106,15 +102,14 @@ describe('Files e2e', () => {
     });
 
     describe('confirm-upload', () => {
-      let dto: ConfirmUploadDto;
-      beforeAll(async () => {
+      let dto: FileUploadedDto;
+
+      beforeEach(async () => {
         dto = {
-          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+          key: await uploadFileToS3(configService, 'user-id'),
           filename: 'avatar.png',
           contentType: 'image/png',
         };
-
-        dto.key = await uploadFileToS3(configService, 'user-id');
       });
 
       it('should return true if body is valid and access token is provided', async () => {
@@ -146,7 +141,7 @@ describe('Files e2e', () => {
         expect(file).toBeDefined();
       });
       it('should delete a file from db if file is infected', async () => {
-        const dto: ConfirmUploadDto = {
+        const dto: FileUploadedDto = {
           key: await uploadFileToS3(configService, 'user-id', true),
           filename: 'eicar.txt',
           contentType: 'text/plain',
@@ -168,8 +163,9 @@ describe('Files e2e', () => {
         expect(file).toBeNull();
       });
       it('should delete file from aws if file was infected', async () => {
-        const dto: ConfirmUploadDto = {
-          key: await uploadFileToS3(configService, 'user-id', true),
+        const fileKey = await uploadFileToS3(configService, 'user-id', true);
+        const dto: FileUploadedDto = {
+          key: fileKey,
           filename: 'eicar.txt',
           contentType: 'text/plain',
         };
@@ -185,9 +181,10 @@ describe('Files e2e', () => {
 
         const command = new HeadObjectCommand({
           Bucket: configService.get<string>('AWS_S3_BUCKET_NAME')!,
-          Key: dto.key,
+          Key: fileKey,
         });
 
+        await sleep(3000);
         await expect(s3.send(command)).rejects.toThrow(Error);
       });
       it('should return a 201 if file is created', async () => {
@@ -264,7 +261,7 @@ describe('Files e2e', () => {
       beforeEach(async () => {
         fileKey = await uploadFileToS3(configService, 'user-id');
 
-        const dto: ConfirmUploadDto = {
+        const dto: FileUploadedDto = {
           key: fileKey,
           filename: 'avatar.png',
           contentType: 'image/png',
