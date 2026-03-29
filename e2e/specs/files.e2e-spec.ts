@@ -4,7 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Server } from 'http';
 import request from 'supertest';
-import { setupE2e, sleep, uploadFileToS3 } from '../utils';
+import { clearS3Bucket, setupE2e, sleep, uploadFileToS3 } from '../utils';
 import { v4 as uuid } from 'uuid';
 import { PrismaService as FilesPrismaService } from '@apps/files/src/prisma';
 
@@ -24,13 +24,12 @@ describe('Files e2e', () => {
   });
 
   afterAll(async () => {
-    await prisma.file.deleteMany();
-
     await app.close();
   });
 
   afterEach(async () => {
     await prisma.file.deleteMany();
+    await clearS3Bucket(configService);
   });
 
   describe('Files', () => {
