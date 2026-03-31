@@ -69,45 +69,6 @@ export class FilesService {
     }
   }
 
-  // async confirmUpload(payload: FileUploadedPayload) {
-  //   const { key, userId } = payload;
-  //
-  //   this.logger.info({ key, userId }, 'Confirming file upload');
-  //
-  //   try {
-  //     await this.isObjectExistsOrThrow({ key });
-  //
-  //     this.logger.debug({ key }, 'Sending file to antivirus service');
-  //
-  //     const isInfected = await firstValueFrom<boolean>(
-  //       this.antivirusClient.send('scan', { key }),
-  //     );
-  //
-  //     if (isInfected) {
-  //       this.logger.warn({ key, userId }, 'File infected, deleting');
-  //
-  //       await this.onInfected({ key });
-  //
-  //       return false;
-  //     }
-  //
-  //     const fileSize = await getFileSize(this.s3, this.bucketName, key);
-  //
-  //     await this.onClearFile({
-  //       ...payload,
-  //       size: fileSize,
-  //     });
-  //
-  //     this.logger.info({ key, userId, fileSize }, 'File accepted and saved');
-  //
-  //     return true;
-  //   } catch (err: unknown) {
-  //     this.logger.error({ key, userId, err }, 'Upload confirmation failed');
-  //
-  //     throw err;
-  //   }
-  // }
-
   async getReadUrl({ key, userId }: KeyDto & { userId?: string }) {
     this.logger.info({ key, userId }, 'Generating download URL');
 
