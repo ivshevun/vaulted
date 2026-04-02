@@ -3,7 +3,6 @@ import { Controller } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { FilesService } from './files.service';
-import { CreateFileType } from './types';
 import {
   FILE_GET_READ_URL,
   FILE_GET_UPLOAD_DATA,
@@ -35,7 +34,7 @@ export class FilesController {
   }
 
   @EventPattern(FILE_SCAN_CLEAR)
-  async onClearFile(@Payload() payload: CreateFileType) {
+  async onClearFile(@Payload() payload: KeyPayload) {
     await this.filesService.onClearFile(payload);
   }
 }

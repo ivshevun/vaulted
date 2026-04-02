@@ -18,12 +18,7 @@ export class AntivirusService {
     this.logger.setContext(AntivirusService.name);
   }
 
-  async scan({
-    key,
-    userId,
-    contentType,
-    filename,
-  }: FileUploadedPayload): Promise<void> {
+  async scan({ key }: FileUploadedPayload): Promise<void> {
     this.logger.info({ key }, 'Starting virus scan');
 
     try {
@@ -40,12 +35,7 @@ export class AntivirusService {
         return;
       }
 
-      this.eventBus.emit('file.scan.clear', {
-        key,
-        userId,
-        contentType,
-        filename,
-      });
+      this.eventBus.emit('file.scan.clear', { key });
     } catch (err: unknown) {
       this.logger.error({ key, err }, 'Virus scan failed');
 

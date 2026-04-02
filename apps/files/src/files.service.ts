@@ -1,6 +1,5 @@
 import {
   createS3Client,
-  FileUploadedPayload,
   GetUploadDataPayload,
   KeyDto,
   KeyPayload,
@@ -54,6 +53,10 @@ export class FilesService {
 
       const url = await getSignedUrl(this.s3, command, {
         expiresIn: 60 * 5,
+      });
+
+      await this.prismaService.file.create({
+        data: { key, filename, contentType, userId },
       });
 
       this.logger.info({ key, userId }, 'Upload URL generated');
@@ -116,38 +119,18 @@ export class FilesService {
     }
   }
 
-  async onClearFile(payload: FileUploadedPayload) {
+  async onClearFile({ key }: KeyPayload) {
     try {
-      const fileSize = await getFileSize(this.s3, this.bucketName, payload.key);
+      const size = await getFileSize(this.s3, this.bucketName, key);
 
-      this.logger.info(
-        {
-          key: payload.key,
-          userId: payload.userId,
-          size: fileSize,
-        },
-        'Saving file metadata',
-      );
+      this.logger.info({ key, size }, 'Marking file as clean');
 
-      return await this.prismaService.file.upsert({
-        where: {
-          key: payload.key,
-        },
-        create: {
-          ...payload,
-          size: fileSize,
-        },
-        update: {},
+      return await this.prismaService.file.update({
+        where: { key },
+        data: { size, status: 'CLEAN' },
       });
     } catch (err: unknown) {
-      this.logger.error(
-        {
-          key: payload.key,
-          userId: payload.userId,
-          err,
-        },
-        'Failed to save file record',
-      );
+      this.logger.error({ key, err }, 'Failed to mark file as clean');
 
       throw err;
     }

@@ -72,10 +72,9 @@ describe('AntivirusService', () => {
 
         await service.scan(payload);
 
-        expect(filesProxyMock.emit).toHaveBeenCalledWith(
-          FILE_SCAN_CLEAR,
-          payload,
-        );
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_CLEAR, {
+          key: payload.key,
+        });
       });
     });
     describe('when file is infected', () => {

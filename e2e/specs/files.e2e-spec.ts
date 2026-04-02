@@ -106,12 +106,10 @@ describe('Files e2e', () => {
       beforeEach(async () => {
         dto = {
           key: await uploadFileToS3(configService, 'user-id'),
-          filename: 'avatar.png',
-          contentType: 'image/png',
         };
       });
 
-      it('should return true if body is valid and access token is provided', async () => {
+      it('should return the key if body is valid and access token is provided', async () => {
         const response = await request(httpServer)
           .post('/files/confirm-upload')
           .send(dto)
@@ -119,9 +117,9 @@ describe('Files e2e', () => {
             Authorization: `Bearer ${accessToken}`,
           });
 
-        const body = response.body as boolean;
+        const body = response.body as { key: string };
 
-        expect(body).toBeTruthy();
+        expect(body.key).toBe(dto.key);
       });
       it('should create a file if body is valid and access token is provided', async () => {
         await request(httpServer)
@@ -142,8 +140,6 @@ describe('Files e2e', () => {
       it('should delete a file from db if file is infected', async () => {
         const dto: FileUploadedDto = {
           key: await uploadFileToS3(configService, 'user-id', true),
-          filename: 'eicar.txt',
-          contentType: 'text/plain',
         };
 
         await request(httpServer)
@@ -166,8 +162,6 @@ describe('Files e2e', () => {
 
         const dto: FileUploadedDto = {
           key: fileKey,
-          filename: 'eicar.txt',
-          contentType: 'text/plain',
         };
 
         await request(httpServer)
@@ -212,42 +206,9 @@ describe('Files e2e', () => {
           .expect(400);
       });
       it('should return a 400 if no key provided', async () => {
-        const invalidDto = {
-          filename: 'avatar.png',
-          contentType: 'image/png',
-        };
-
         await request(httpServer)
           .post('/files/confirm-upload')
-          .send(invalidDto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          })
-          .expect(400);
-      });
-      it('should return a 400 if no filename provided', async () => {
-        const invalidDto = {
-          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-          contentType: 'image/png',
-        };
-
-        await request(httpServer)
-          .post('/files/confirm-upload')
-          .send(invalidDto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          })
-          .expect(400);
-      });
-      it('should return a 400 if no contentType provided', async () => {
-        const invalidDto = {
-          key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
-          filename: 'avatar.png',
-        };
-
-        await request(httpServer)
-          .post('/files/confirm-upload')
-          .send(invalidDto)
+          .send({})
           .set({
             Authorization: `Bearer ${accessToken}`,
           })
@@ -261,18 +222,12 @@ describe('Files e2e', () => {
       beforeEach(async () => {
         fileKey = await uploadFileToS3(configService, 'user-id');
 
-        const dto: FileUploadedDto = {
-          key: fileKey,
-          filename: 'avatar.png',
-          contentType: 'image/png',
-        };
-
         await request(httpServer)
           .post('/files/confirm-upload')
           .set({
             Authorization: `Bearer ${accessToken}`,
           })
-          .send(dto);
+          .send({ key: fileKey });
       });
 
       it('should return a url if key is valid', async () => {

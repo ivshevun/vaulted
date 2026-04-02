@@ -73,14 +73,13 @@ export class FilesController {
   @Post('confirm-upload')
   confirmUpload(@Body() dto: FileUploadedDto, @CurrentUser() user: UserDto) {
     const payload: FileUploadedPayload = {
-      ...dto,
+      key: dto.key,
       userId: user.id,
     };
 
     this.eventBus.emit('file.uploaded', payload);
 
-    // TODO
-    return true;
+    return { key: dto.key };
   }
 
   @GetReadUrlDocs()

@@ -1,5 +1,4 @@
-import { GetUploadDataPayload } from './get-upload-data.payload';
-
-export class FileUploadedPayload extends GetUploadDataPayload {
+export class FileUploadedPayload {
   key: string;
+  userId: string;
 }

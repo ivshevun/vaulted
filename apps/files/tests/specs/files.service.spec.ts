@@ -16,7 +16,9 @@ import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { LoggerModule } from 'nestjs-pino';
 import { FilesService } from '../../src/files.service';
 import { PrismaService } from '../../src/prisma';
+import { makeGetUploadDataPayload } from '@apps/files/tests/utils';
 import { makeFileUploadedPayload } from '@app/common-tests';
+import { File, FileStatus } from '@prisma/files-client';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
@@ -48,7 +50,7 @@ describe('FilesService', () => {
   });
 
   describe('getUploadData', () => {
-    const payload = makeFileUploadedPayload();
+    const payload = makeGetUploadDataPayload();
 
     describe('when presigner succeeds', () => {
       const mockUrl = 'https://mock-s3-url.com/upload';
@@ -166,13 +168,14 @@ describe('FilesService', () => {
   describe('onClearFile', () => {
     const payload = makeFileUploadedPayload();
     const fileSize = 2048;
-    const mockFileRecord = {
+    const mockFileRecord: File = {
       id: 'file-id',
       key: payload.key,
-      filename: payload.filename,
-      contentType: payload.contentType,
+      filename: 'avatar.png',
+      contentType: 'image/png',
       userId: payload.userId,
       size: fileSize,
+      status: FileStatus.CLEAN,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -180,20 +183,20 @@ describe('FilesService', () => {
     describe('when S3 and database succeed', () => {
       beforeEach(() => {
         s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
-        prismaServiceMock.file.upsert.mockResolvedValue(mockFileRecord);
+        prismaServiceMock.file.update.mockResolvedValue(mockFileRecord);
       });
 
-      it('should save file metadata with the size from S3', async () => {
+      it('should update the file record with size from S3 and CLEAN status', async () => {
         await service.onClearFile(payload);
 
-        expect(prismaServiceMock.file.upsert).toHaveBeenCalledWith(
+        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
           expect.objectContaining({
-            create: { ...payload, size: fileSize },
+            data: { size: fileSize, status: 'CLEAN' },
           }),
         );
       });
 
-      it('should return the saved file record', async () => {
+      it('should return the updated file record', async () => {
         const result = await service.onClearFile(payload);
 
         expect(result).toBe(mockFileRecord);
@@ -214,16 +217,16 @@ describe('FilesService', () => {
       it('should not save anything to the database', async () => {
         await service.onClearFile(payload).catch(() => {});
 
-        expect(prismaServiceMock.file.upsert).not.toHaveBeenCalled();
+        expect(prismaServiceMock.file.update).not.toHaveBeenCalled();
       });
     });
 
-    describe('when database upsert fails', () => {
+    describe('when database update fails', () => {
       const dbError = new Error('DB connection lost');
 
       beforeEach(() => {
         s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
-        prismaServiceMock.file.upsert.mockRejectedValue(dbError);
+        prismaServiceMock.file.update.mockRejectedValue(dbError);
       });
 
       it('should rethrow the error', async () => {
