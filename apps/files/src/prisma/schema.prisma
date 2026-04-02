@@ -8,6 +8,14 @@ datasource db {
   url      = env("FILES_DATABASE_URL")
 }
 
+enum FileStatus {
+  PENDING
+  SCANNING
+  CLEAN
+  INFECTED
+  FAILED
+}
+
 model File {
   id String @id @default(uuid())
 
@@ -15,7 +23,9 @@ model File {
   filename String
 
   contentType String
-  size        Int
+  size        Int?
+
+  status FileStatus @default(PENDING)
 
   userId String
 
