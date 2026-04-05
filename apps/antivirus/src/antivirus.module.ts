@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AntivirusController } from './antivirus.controller';
 import { AntivirusService } from './antivirus.service';
-import { RabbitMQSetupService } from './rabbitmq-setup.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
 import { RMQ_EXCHANGE } from '@app/common/constants';
+import { AntivirusDlxSetupService } from '@apps/antivirus/src/antivirus-dlx-setup.service';
 
 @Module({
   imports: [
@@ -40,6 +40,6 @@ import { RMQ_EXCHANGE } from '@app/common/constants';
     LoggerModule.forRoot(pinoConfig),
   ],
   controllers: [AntivirusController],
-  providers: [AntivirusService, RabbitMQSetupService],
+  providers: [AntivirusService, AntivirusDlxSetupService],
 })
 export class AntivirusModule {}

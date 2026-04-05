@@ -3,10 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import amqplib from 'amqplib';
 import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-
-const ANTIVIRUS_DLX = 'antivirus_dlx';
-const ANTIVIRUS_RETRY_QUEUE = 'antivirus_retry_queue';
-const RETRY_TTL_MS = 30_000;
+import {
+  ANTIVIRUS_DLX,
+  ANTIVIRUS_RETRY_QUEUE,
+  ANTIVIRUS_RETRY_TTL_MS,
+} from './antivirus.constants';
 
 @Injectable()
 export class AntivirusDlxSetupService implements OnApplicationBootstrap {
@@ -27,7 +28,7 @@ export class AntivirusDlxSetupService implements OnApplicationBootstrap {
     await channel.assertQueue(ANTIVIRUS_RETRY_QUEUE, {
       durable: true,
       arguments: {
-        'x-message-ttl': RETRY_TTL_MS,
+        'x-message-ttl': ANTIVIRUS_RETRY_TTL_MS,
         'x-dead-letter-exchange': RMQ_EXCHANGE,
         'x-dead-letter-routing-key': FILE_UPLOADED,
       },
@@ -42,6 +43,6 @@ export class AntivirusDlxSetupService implements OnApplicationBootstrap {
     await channel.close();
     await connection.close();
 
-    this.logger.info('RabbitMQ retry topology asserted');
+    this.logger.info('Antivirus retry topology configured');
   }
 }
