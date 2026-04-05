@@ -1,11 +1,16 @@
 import { createS3Client, FileUploadedPayload } from '@app/common';
+import { ANTIVIRUS_MAX_RETRIES } from './antivirus.constants';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Nodeclam from 'clamscan';
 import { Readable } from 'stream';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { FILE_SCAN_STARTED, RMQ_EXCHANGE } from '@app/common/constants';
+import {
+  FILE_SCAN_FAILED,
+  FILE_SCAN_STARTED,
+  RMQ_EXCHANGE,
+} from '@app/common/constants';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
@@ -18,12 +23,20 @@ export class AntivirusService {
     this.logger.setContext(AntivirusService.name);
   }
 
-  async scan({ key }: FileUploadedPayload): Promise<void> {
+  async scan({ key }: FileUploadedPayload, retryCount = 0): Promise<void> {
+    if (retryCount >= ANTIVIRUS_MAX_RETRIES) {
+      this.logger.warn(
+        { key, retryCount },
+        'Max retries exhausted, marking scan as failed',
+      );
+      this.eventBus.emit(FILE_SCAN_FAILED, { key });
+      return;
+    }
+
     this.logger.info({ key }, 'Starting virus scan');
 
     try {
       const fileStream = await this.getFileStream(key);
-
       this.eventBus.emit(FILE_SCAN_STARTED, { key });
 
       const clamScan = await this.initClamScan();

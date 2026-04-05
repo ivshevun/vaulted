@@ -11,6 +11,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { makeFileUploadedPayload } from '@app/common-tests';
 import {
   FILE_SCAN_CLEAR,
+  FILE_SCAN_FAILED,
   FILE_SCAN_INFECTED,
   FILE_SCAN_STARTED,
   RMQ_EXCHANGE,
@@ -34,6 +35,7 @@ describe('AntivirusService', () => {
   let s3Mock: AwsClientStub<S3Client>;
 
   beforeEach(async () => {
+    mockScanStream.mockClear();
     filesProxyMock = mockDeep();
     s3Mock = mockClient(S3Client);
 
@@ -61,6 +63,19 @@ describe('AntivirusService', () => {
   });
 
   describe('scan', () => {
+    describe('when max retries are exhausted', () => {
+      it('should emit FILE_SCAN_FAILED and not scan', async () => {
+        const payload = makeFileUploadedPayload();
+
+        await service.scan(payload, 5);
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_FAILED, {
+          key: payload.key,
+        });
+        expect(mockScanStream).not.toHaveBeenCalled();
+      });
+    });
+
     describe('when scan file is clear', () => {
       beforeEach(() => {
         mockScanStream.mockResolvedValue({
