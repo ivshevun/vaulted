@@ -254,6 +254,39 @@ describe('FilesService', () => {
     });
   });
 
+  describe('onScanFailed', () => {
+    const payload: KeyPayload = { key: 'user-id/file-uuid' };
+
+    describe('when database update succeeds', () => {
+      beforeEach(() => {
+        prismaServiceMock.file.update.mockResolvedValue({} as File);
+      });
+
+      it('should update the file status to FAILED', async () => {
+        await service.onScanFailed(payload);
+
+        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { key: payload.key },
+            data: { status: 'FAILED' },
+          }),
+        );
+      });
+    });
+
+    describe('when database update fails', () => {
+      const dbError = new Error('DB connection lost');
+
+      beforeEach(() => {
+        prismaServiceMock.file.update.mockRejectedValue(dbError);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.onScanFailed(payload)).rejects.toThrow(dbError);
+      });
+    });
+  });
+
   describe('onScanStarted', () => {
     const payload: KeyPayload = { key: 'user-id/file-uuid' };
 

@@ -21,6 +21,7 @@ import { getFileSize } from './utils';
 import { PrismaService } from './prisma';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
+import { FileStatus } from '@prisma/files-client';
 
 @Injectable()
 export class FilesService {
@@ -116,6 +117,19 @@ export class FilesService {
       this.logger.info({ key }, 'Infected file deleted');
     } catch (err: unknown) {
       this.logger.error({ key, err }, 'Failed to delete infected file');
+
+      throw err;
+    }
+  }
+
+  async onScanFailed({ key }: KeyPayload) {
+    try {
+      return await this.prismaService.file.update({
+        where: { key },
+        data: { status: FileStatus.FAILED },
+      });
+    } catch (err: unknown) {
+      this.logger.error({ key, err }, 'Failed to update file status to FAILED');
 
       throw err;
     }
