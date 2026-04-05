@@ -155,6 +155,14 @@ describe('FilesService', () => {
           Key: payload.key,
         });
       });
+
+      it('should delete the file record from DB', async () => {
+        await service.onInfected(payload);
+
+        expect(prismaServiceMock.file.delete).toHaveBeenCalledWith({
+          where: { key: payload.key },
+        });
+      });
     });
 
     describe('when S3 delete fails', () => {
@@ -166,6 +174,12 @@ describe('FilesService', () => {
 
       it('should rethrow the error', async () => {
         await expect(service.onInfected(payload)).rejects.toThrow(s3Error);
+      });
+
+      it('should not delete the DB record', async () => {
+        await service.onInfected(payload).catch(() => {});
+
+        expect(prismaServiceMock.file.delete).not.toHaveBeenCalled();
       });
     });
   });

@@ -107,12 +107,11 @@ export class FilesService {
     this.logger.info({ key }, 'Deleting infected file');
 
     try {
-      const command = new DeleteObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
-      });
+      await this.s3.send(
+        new DeleteObjectCommand({ Bucket: this.bucketName, Key: key }),
+      );
 
-      await this.s3.send(command);
+      await this.prismaService.file.delete({ where: { key } });
 
       this.logger.info({ key }, 'Infected file deleted');
     } catch (err: unknown) {

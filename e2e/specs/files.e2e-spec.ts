@@ -1,12 +1,13 @@
-import { createS3Client, FileUploadedDto, GetUploadDataDto } from '@app/common';
+import { createS3Client, GetUploadDataDto } from '@app/common';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Server } from 'http';
 import request from 'supertest';
-import { clearS3Bucket, setupE2e, sleep, uploadFileToS3 } from '../utils';
+import { clearS3Bucket, poll, setupE2e, uploadFileToS3 } from '../utils';
 import { v4 as uuid } from 'uuid';
 import { PrismaService as FilesPrismaService } from '@apps/files/src/prisma';
+import { FileStatus } from '@prisma/files-client';
 
 describe('Files e2e', () => {
   let app: INestApplication;
@@ -101,117 +102,123 @@ describe('Files e2e', () => {
     });
 
     describe('confirm-upload', () => {
-      let dto: FileUploadedDto;
+      let key: string;
 
       beforeEach(async () => {
-        dto = {
-          key: await uploadFileToS3(configService, 'user-id'),
-        };
+        const response = await request(httpServer)
+          .get('/files/upload-data')
+          .query({ filename: 'avatar.png', contentType: 'image/png' })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        key = (response.body as { key: string }).key;
+
+        await uploadFileToS3(configService, key);
       });
 
-      it('should return the key if body is valid and access token is provided', async () => {
+      it('should return the key', async () => {
         const response = await request(httpServer)
           .post('/files/confirm-upload')
-          .send(dto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          });
+          .send({ key })
+          .set({ Authorization: `Bearer ${accessToken}` });
 
-        const body = response.body as { key: string };
-
-        expect(body.key).toBe(dto.key);
+        expect((response.body as { key: string }).key).toBe(key);
       });
-      it('should create a file if body is valid and access token is provided', async () => {
+
+      it('should return a 201', async () => {
         await request(httpServer)
           .post('/files/confirm-upload')
-          .send(dto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          });
+          .send({ key })
+          .set({ Authorization: `Bearer ${accessToken}` })
+          .expect(201);
+      });
+
+      it('should return a 404 if no PENDING record exists in DB', async () => {
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send({ key: 'unknown/key' })
+          .set({ Authorization: `Bearer ${accessToken}` })
+          .expect(404);
+      });
+
+      it('should set file status to FAILED if file is not in S3', async () => {
+        const uploadResponse = await request(httpServer)
+          .get('/files/upload-data')
+          .query({ filename: 'missing.png', contentType: 'image/png' })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        const missingKey = (uploadResponse.body as { key: string }).key;
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send({ key: missingKey })
+          .set({ Authorization: `Bearer ${accessToken}` });
 
         const file = await prisma.file.findUnique({
-          where: {
-            key: dto.key,
-          },
+          where: { key: missingKey },
         });
 
-        expect(file).toBeDefined();
+        expect(file?.status).toBe(FileStatus.FAILED);
       });
-      it('should delete a file from db if file is infected', async () => {
-        const dto: FileUploadedDto = {
-          key: await uploadFileToS3(configService, 'user-id', true),
-        };
+
+      it('should delete infected file from DB and S3', async () => {
+        const uploadResponse = await request(httpServer)
+          .get('/files/upload-data')
+          .query({ filename: 'eicar.txt', contentType: 'text/plain' })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        const infectedKey = (uploadResponse.body as { key: string }).key;
+
+        await uploadFileToS3(configService, infectedKey, true);
 
         await request(httpServer)
           .post('/files/confirm-upload')
-          .send(dto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          });
-
-        const file = await prisma.file.findUnique({
-          where: {
-            key: dto.key,
-          },
-        });
-
-        expect(file).toBeNull();
-      });
-      it('should delete file from aws if file was infected', async () => {
-        const fileKey = await uploadFileToS3(configService, 'user-id', true);
-
-        const dto: FileUploadedDto = {
-          key: fileKey,
-        };
-
-        await request(httpServer)
-          .post('/files/confirm-upload')
-          .send(dto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          });
+          .send({ key: infectedKey })
+          .set({ Authorization: `Bearer ${accessToken}` });
 
         const s3 = createS3Client(configService);
 
-        const command = new HeadObjectCommand({
-          Bucket: configService.get<string>('AWS_S3_BUCKET_NAME')!,
-          Key: fileKey,
+        // poll until antivirus pipeline completes: file.uploaded → ClamAV scan → file.scan.infected → cleanup
+        await poll(async () => {
+          const file = await prisma.file.findUnique({
+            where: { key: infectedKey },
+          });
+          return file === null;
         });
 
-        await sleep(10000);
-        await expect(s3.send(command)).rejects.toThrow(Error);
+        const file = await prisma.file.findUnique({
+          where: { key: infectedKey },
+        });
+        expect(file).toBeNull();
+
+        await expect(
+          s3.send(
+            new HeadObjectCommand({
+              Bucket: configService.get<string>('AWS_S3_BUCKET_NAME')!,
+              Key: infectedKey,
+            }),
+          ),
+        ).rejects.toThrow(Error);
       });
-      it('should return a 201 if file is created', async () => {
-        await request(httpServer)
-          .post('/files/confirm-upload')
-          .send(dto)
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          })
-          .expect(201);
-      });
+
       it('should return a 403 if no access token provided', async () => {
         await request(httpServer)
           .post('/files/confirm-upload')
-          .send(dto)
+          .send({ key })
           .expect(403);
       });
 
       it('should return a 400 if no body provided', async () => {
         await request(httpServer)
           .post('/files/confirm-upload')
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          })
+          .set({ Authorization: `Bearer ${accessToken}` })
           .expect(400);
       });
+
       it('should return a 400 if no key provided', async () => {
         await request(httpServer)
           .post('/files/confirm-upload')
           .send({})
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          })
+          .set({ Authorization: `Bearer ${accessToken}` })
           .expect(400);
       });
     });
@@ -220,14 +227,19 @@ describe('Files e2e', () => {
       let fileKey: string;
 
       beforeEach(async () => {
-        fileKey = await uploadFileToS3(configService, 'user-id');
+        const uploadResponse = await request(httpServer)
+          .get('/files/upload-data')
+          .query({ filename: 'avatar.png', contentType: 'image/png' })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        fileKey = (uploadResponse.body as { key: string }).key;
+
+        await uploadFileToS3(configService, fileKey);
 
         await request(httpServer)
           .post('/files/confirm-upload')
-          .set({
-            Authorization: `Bearer ${accessToken}`,
-          })
-          .send({ key: fileKey });
+          .send({ key: fileKey })
+          .set({ Authorization: `Bearer ${accessToken}` });
       });
 
       it('should return a url if key is valid', async () => {
