@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AntivirusController } from './antivirus.controller';
 import { AntivirusService } from './antivirus.service';
+import { RabbitMQSetupService } from './rabbitmq-setup.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -39,6 +40,6 @@ import { RMQ_EXCHANGE } from '@app/common/constants';
     LoggerModule.forRoot(pinoConfig),
   ],
   controllers: [AntivirusController],
-  providers: [AntivirusService],
+  providers: [AntivirusService, RabbitMQSetupService],
 })
 export class AntivirusModule {}

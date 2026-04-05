@@ -161,6 +161,9 @@ importers:
       '@swc/core':
         specifier: ^1.10.7
         version: 1.11.21
+      '@types/amqplib':
+        specifier: ^0.10.8
+        version: 0.10.8
       '@types/clamscan':
         specifier: ^2.4.1
         version: 2.4.1
@@ -3049,6 +3052,9 @@ packages:
       {
         integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==,
       }
+
+  '@types/amqplib@0.10.8':
+    resolution: {integrity: sha512-vtDp8Pk1wsE/AuQ8/Rgtm6KUZYqcnTgNvEHwzCkX8rL7AGsC6zqAfKAAJhUZXFhM/Pp++tbnUHiam/8vVpPztA==}
 
   '@types/babel__core@7.20.5':
     resolution:
@@ -10965,6 +10971,10 @@ snapshots:
   '@tsconfig/node14@1.0.3': {}
 
   '@tsconfig/node16@1.0.4': {}
+
+  '@types/amqplib@0.10.8':
+    dependencies:
+      '@types/node': 22.14.1
 
   '@types/babel__core@7.20.5':
     dependencies:
