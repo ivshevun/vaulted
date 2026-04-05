@@ -8,7 +8,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { HttpStatus } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AwsClientStub, mockClient } from 'aws-sdk-client-mock';
 import * as matchers from 'aws-sdk-client-mock-jest';
@@ -19,6 +19,7 @@ import { PrismaService } from '../../src/prisma';
 import { makeGetUploadDataPayload } from '@apps/files/tests/utils';
 import { makeFileUploadedPayload } from '@app/common-tests';
 import { File, FileStatus } from '@prisma/files-client';
+import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
@@ -27,10 +28,12 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
 describe('FilesService', () => {
   let service: FilesService;
   let prismaServiceMock: DeepMockProxy<PrismaService>;
+  let eventBusMock: DeepMockProxy<ClientProxy>;
   let s3Mock: AwsClientStub<S3Client>;
 
   beforeEach(async () => {
     prismaServiceMock = mockDeep();
+    eventBusMock = mockDeep();
     s3Mock = mockClient(S3Client);
 
     expect.extend(matchers);
@@ -43,6 +46,7 @@ describe('FilesService', () => {
       providers: [
         FilesService,
         { provide: PrismaService, useValue: prismaServiceMock },
+        { provide: RMQ_EXCHANGE, useValue: eventBusMock },
       ],
     }).compile();
 
@@ -231,6 +235,84 @@ describe('FilesService', () => {
 
       it('should rethrow the error', async () => {
         await expect(service.onClearFile(payload)).rejects.toThrow(dbError);
+      });
+    });
+  });
+
+  describe('confirmUpload', () => {
+    const payload = makeFileUploadedPayload();
+    const mockPendingFile: File = {
+      id: 'file-id',
+      key: payload.key,
+      filename: 'avatar.png',
+      contentType: 'image/png',
+      userId: payload.userId,
+      size: null,
+      status: FileStatus.PENDING,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    describe('when no PENDING record exists in DB', () => {
+      beforeEach(() => {
+        prismaServiceMock.file.findFirst.mockResolvedValue(null);
+      });
+
+      it('should throw an RpcException with NOT_FOUND status', async () => {
+        await expect(service.confirmUpload(payload)).rejects.toMatchObject(
+          new RpcException({
+            message: 'File not found',
+            status: HttpStatus.NOT_FOUND,
+          }),
+        );
+      });
+    });
+
+    describe('when PENDING record exists but HeadObject fails', () => {
+      const s3Error = new Error('NoSuchKey');
+
+      beforeEach(() => {
+        prismaServiceMock.file.findFirst.mockResolvedValue(mockPendingFile);
+        s3Mock.on(HeadObjectCommand).rejects(s3Error);
+      });
+
+      it('should update file status to FAILED', async () => {
+        await service.confirmUpload(payload).catch(() => {});
+
+        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { key: payload.key },
+            data: { status: 'FAILED' },
+          }),
+        );
+      });
+
+      it('should not emit file.uploaded', async () => {
+        await service.confirmUpload(payload).catch(() => {});
+
+        expect(eventBusMock.emit).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when PENDING record exists and file is in S3', () => {
+      beforeEach(() => {
+        prismaServiceMock.file.findFirst.mockResolvedValue(mockPendingFile);
+        s3Mock.on(HeadObjectCommand).resolves({});
+      });
+
+      it('should emit file.uploaded with key and userId', async () => {
+        await service.confirmUpload(payload);
+
+        expect(eventBusMock.emit).toHaveBeenCalledWith(FILE_UPLOADED, {
+          key: payload.key,
+          userId: payload.userId,
+        });
+      });
+
+      it('should return the key', async () => {
+        const result = await service.confirmUpload(payload);
+
+        expect(result).toEqual({ key: payload.key });
       });
     });
   });

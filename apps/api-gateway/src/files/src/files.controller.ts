@@ -21,7 +21,7 @@ import { catchError, firstValueFrom, timeout } from 'rxjs';
 import { CurrentUser } from '../../decorators';
 import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { RMQ_EXCHANGE } from '@app/common/constants';
+import { FILE_CONFIRM_UPLOAD, RMQ_EXCHANGE } from '@app/common/constants';
 
 @UseGuards(JwtGuard)
 @Controller('files')
@@ -71,15 +71,35 @@ export class FilesController {
 
   @ConfirmUploadDocs()
   @Post('confirm-upload')
-  confirmUpload(@Body() dto: FileUploadedDto, @CurrentUser() user: UserDto) {
+  async confirmUpload(
+    @Body() dto: FileUploadedDto,
+    @CurrentUser() user: UserDto,
+  ) {
     const payload: FileUploadedPayload = {
       key: dto.key,
       userId: user.id,
     };
 
-    this.eventBus.emit('file.uploaded', payload);
+    return await firstValueFrom(
+      this.eventBus.send<{ key: string }>(FILE_CONFIRM_UPLOAD, payload).pipe(
+        timeout(5000),
+        catchError((err: unknown) => {
+          this.logger.error(
+            {
+              err,
+              layer: 'gateway',
+              target: 'files',
+              action: 'confirm-upload',
+              userId: user.id,
+              key: dto.key,
+            },
+            'Files service request failed',
+          );
 
-    return { key: dto.key };
+          throw err;
+        }),
+      ),
+    );
   }
 
   @GetReadUrlDocs()

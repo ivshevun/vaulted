@@ -1,9 +1,14 @@
-import { GetUploadDataPayload, KeyPayload } from '@app/common';
+import {
+  FileUploadedPayload,
+  GetUploadDataPayload,
+  KeyPayload,
+} from '@app/common';
 import { Controller } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { of } from 'rxjs';
 import { FilesService } from './files.service';
 import {
+  FILE_CONFIRM_UPLOAD,
   FILE_GET_READ_URL,
   FILE_GET_UPLOAD_DATA,
   FILE_SCAN_CLEAR,
@@ -31,6 +36,13 @@ export class FilesController {
   @EventPattern(FILE_SCAN_INFECTED)
   async onInfected(@Payload() payload: KeyPayload) {
     await this.filesService.onInfected(payload);
+  }
+
+  @MessagePattern(FILE_CONFIRM_UPLOAD)
+  async confirmUpload(@Payload() payload: FileUploadedPayload) {
+    const result = await this.filesService.confirmUpload(payload);
+
+    return of(result);
   }
 
   @EventPattern(FILE_SCAN_CLEAR)

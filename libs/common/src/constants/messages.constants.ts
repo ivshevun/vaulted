@@ -5,3 +5,4 @@ export const REFRESH = 'refresh';
 export const AUTHORIZE = 'authorize';
 export const FILE_GET_UPLOAD_DATA = 'file.get-upload-data';
 export const FILE_GET_READ_URL = 'file.get-read-url';
+export const FILE_CONFIRM_UPLOAD = 'file.confirm-upload';

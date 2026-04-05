@@ -12,4 +12,5 @@ export {
   AUTHORIZE,
   FILE_GET_UPLOAD_DATA,
   FILE_GET_READ_URL,
+  FILE_CONFIRM_UPLOAD,
 } from './messages.constants';

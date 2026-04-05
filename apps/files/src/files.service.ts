@@ -1,5 +1,6 @@
 import {
   createS3Client,
+  FileUploadedPayload,
   GetUploadDataPayload,
   KeyDto,
   KeyPayload,
@@ -12,13 +13,14 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { v4 as uuid } from 'uuid';
 import { getFileSize } from './utils';
 import { PrismaService } from './prisma';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
 
 @Injectable()
 export class FilesService {
@@ -28,6 +30,7 @@ export class FilesService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
+    @Inject(RMQ_EXCHANGE) private readonly eventBus: ClientProxy,
     @InjectPinoLogger() private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(FilesService.name);
@@ -134,6 +137,36 @@ export class FilesService {
 
       throw err;
     }
+  }
+
+  async confirmUpload({ key, userId }: FileUploadedPayload) {
+    const file = await this.prismaService.file.findFirst({
+      where: { key, userId, status: 'PENDING' },
+    });
+
+    if (!file) {
+      throw new RpcException({
+        message: 'File not found',
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    try {
+      await this.s3.send(
+        new HeadObjectCommand({ Bucket: this.bucketName, Key: key }),
+      );
+    } catch (err: unknown) {
+      await this.prismaService.file.update({
+        where: { key },
+        data: { status: 'FAILED' },
+      });
+
+      throw err;
+    }
+
+    this.eventBus.emit(FILE_UPLOADED, { key, userId });
+
+    return { key };
   }
 
   private async isObjectExistsOrThrow({ key }: KeyPayload) {

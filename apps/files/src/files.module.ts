@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
 import { PrismaModule } from './prisma';
 import { pinoConfig } from '@app/common';
+import { RMQ_EXCHANGE } from '@app/common/constants';
 import { LoggerModule } from 'nestjs-pino';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -21,8 +23,25 @@ import { LoggerModule } from 'nestjs-pino';
         AWS_SECRET_ACCESS_KEY: Joi.string().required(),
         AWS_REGION: Joi.string().required(),
         AWS_S3_BUCKET_NAME: Joi.string().required(),
+
+        RABBITMQ_URL: Joi.string().required(),
       }),
     }),
+    ClientsModule.registerAsync([
+      {
+        name: RMQ_EXCHANGE,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL')!],
+            exchange: RMQ_EXCHANGE,
+            exchangeType: 'topic',
+            wildcards: true,
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [FilesController],
   providers: [FilesService],
