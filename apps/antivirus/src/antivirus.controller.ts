@@ -1,4 +1,5 @@
 import { FileUploadedPayload } from '@app/common';
+import { FILE_UPLOADED } from '@app/common/constants';
 import { Controller } from '@nestjs/common';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import { AntivirusService } from './antivirus.service';
@@ -7,7 +8,7 @@ import { AntivirusService } from './antivirus.service';
 export class AntivirusController {
   constructor(private readonly antivirusService: AntivirusService) {}
 
-  @EventPattern('file.uploaded')
+  @EventPattern(FILE_UPLOADED)
   async scan(
     @Payload() payload: FileUploadedPayload,
     @Ctx() context: RmqContext,

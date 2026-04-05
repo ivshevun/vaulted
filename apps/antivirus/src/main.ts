@@ -29,7 +29,7 @@ async function bootstrap() {
       wildcards: true,
       exchangeType: 'topic',
       exchange: RMQ_EXCHANGE,
-      routingKey: 'file.uploaded',
+      routingKey: FILE_UPLOADED,
     },
   });
 

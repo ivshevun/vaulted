@@ -7,7 +7,9 @@ import { Readable } from 'stream';
 import { GetObjectCommand, NoSuchKey } from '@aws-sdk/client-s3';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import {
+  FILE_SCAN_CLEAR,
   FILE_SCAN_FAILED,
+  FILE_SCAN_INFECTED,
   FILE_SCAN_STARTED,
   RMQ_EXCHANGE,
 } from '@app/common/constants';
@@ -47,11 +49,11 @@ export class AntivirusService {
       this.logger.info({ key, isInfected }, 'Virus scan finished');
 
       if (isInfected) {
-        this.eventBus.emit('file.scan.infected', { key });
+        this.eventBus.emit(FILE_SCAN_INFECTED, { key });
         return;
       }
 
-      this.eventBus.emit('file.scan.clear', { key });
+      this.eventBus.emit(FILE_SCAN_CLEAR, { key });
     } catch (err: unknown) {
       if (err instanceof S3FileNotFoundError) {
         this.logger.warn(
