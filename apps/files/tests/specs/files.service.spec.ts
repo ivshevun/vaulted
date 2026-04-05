@@ -20,6 +20,7 @@ import { makeGetUploadDataPayload } from '@apps/files/tests/utils';
 import { makeFileUploadedPayload } from '@app/common-tests';
 import { File, FileStatus } from '@prisma/files-client';
 import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
+import { KeyPayload } from '@app/common';
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest.fn(),
@@ -235,6 +236,39 @@ describe('FilesService', () => {
 
       it('should rethrow the error', async () => {
         await expect(service.onClearFile(payload)).rejects.toThrow(dbError);
+      });
+    });
+  });
+
+  describe('onScanStarted', () => {
+    const payload: KeyPayload = { key: 'user-id/file-uuid' };
+
+    describe('when database update succeeds', () => {
+      beforeEach(() => {
+        prismaServiceMock.file.update.mockResolvedValue({} as File);
+      });
+
+      it('should update the file status to SCANNING', async () => {
+        await service.onScanStarted(payload);
+
+        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { key: payload.key },
+            data: { status: 'SCANNING' },
+          }),
+        );
+      });
+    });
+
+    describe('when database update fails', () => {
+      const dbError = new Error('DB connection lost');
+
+      beforeEach(() => {
+        prismaServiceMock.file.update.mockRejectedValue(dbError);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.onScanStarted(payload)).rejects.toThrow(dbError);
       });
     });
   });

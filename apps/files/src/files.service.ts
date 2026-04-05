@@ -122,6 +122,22 @@ export class FilesService {
     }
   }
 
+  async onScanStarted({ key }: KeyPayload) {
+    try {
+      return await this.prismaService.file.update({
+        where: { key },
+        data: { status: 'SCANNING' },
+      });
+    } catch (err: unknown) {
+      this.logger.error(
+        { key, err },
+        'Failed to update file status to SCANNING',
+      );
+
+      throw err;
+    }
+  }
+
   async onClearFile({ key }: KeyPayload) {
     try {
       const size = await getFileSize(this.s3, this.bucketName, key);

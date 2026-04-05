@@ -2,6 +2,7 @@ export { RMQ_EXCHANGE } from './rmq.constants';
 export {
   FILE_SCAN_CLEAR,
   FILE_SCAN_INFECTED,
+  FILE_SCAN_STARTED,
   FILE_UPLOADED,
 } from './events.constants';
 export {

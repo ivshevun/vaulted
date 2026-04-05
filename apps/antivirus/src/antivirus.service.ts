@@ -5,7 +5,7 @@ import Nodeclam from 'clamscan';
 import { Readable } from 'stream';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { RMQ_EXCHANGE } from '@app/common/constants';
+import { FILE_SCAN_STARTED, RMQ_EXCHANGE } from '@app/common/constants';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
@@ -23,6 +23,8 @@ export class AntivirusService {
 
     try {
       const fileStream = await this.getFileStream(key);
+
+      this.eventBus.emit(FILE_SCAN_STARTED, { key });
 
       const clamScan = await this.initClamScan();
 

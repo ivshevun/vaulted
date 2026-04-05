@@ -13,6 +13,7 @@ import {
   FILE_GET_UPLOAD_DATA,
   FILE_SCAN_CLEAR,
   FILE_SCAN_INFECTED,
+  FILE_SCAN_STARTED,
 } from '@app/common/constants';
 
 @Controller()
@@ -31,6 +32,11 @@ export class FilesController {
     const url = await this.filesService.getReadUrl(getReadUrlPayload);
 
     return of(url);
+  }
+
+  @EventPattern(FILE_SCAN_STARTED)
+  async onScanStarted(@Payload() payload: KeyPayload) {
+    await this.filesService.onScanStarted(payload);
   }
 
   @EventPattern(FILE_SCAN_INFECTED)

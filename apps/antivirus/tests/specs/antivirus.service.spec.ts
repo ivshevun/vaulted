@@ -12,6 +12,7 @@ import { makeFileUploadedPayload } from '@app/common-tests';
 import {
   FILE_SCAN_CLEAR,
   FILE_SCAN_INFECTED,
+  FILE_SCAN_STARTED,
   RMQ_EXCHANGE,
 } from '@app/common/constants';
 import { Readable } from 'stream';
@@ -67,6 +68,16 @@ describe('AntivirusService', () => {
         });
       });
 
+      it('should emit file.scan.started before scanning', async () => {
+        const payload = makeFileUploadedPayload();
+
+        await service.scan(payload);
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_STARTED, {
+          key: payload.key,
+        });
+      });
+
       it('should notify that file is clear', async () => {
         const payload = makeFileUploadedPayload();
 
@@ -81,6 +92,16 @@ describe('AntivirusService', () => {
       beforeEach(() => {
         mockScanStream.mockResolvedValue({
           isInfected: true,
+        });
+      });
+
+      it('should emit file.scan.started before scanning', async () => {
+        const payload = makeFileUploadedPayload();
+
+        await service.scan(payload);
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_STARTED, {
+          key: payload.key,
         });
       });
 
@@ -127,10 +148,22 @@ describe('AntivirusService', () => {
         );
       });
 
-      it('should emit nothing', async () => {
-        await service.scan(makeFileUploadedPayload()).catch(() => {});
+      it('should emit file.scan.started but not a result event', async () => {
+        const payload = makeFileUploadedPayload();
 
-        expect(filesProxyMock.emit).not.toHaveBeenCalled();
+        await service.scan(payload).catch(() => {});
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_STARTED, {
+          key: payload.key,
+        });
+        expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
+          FILE_SCAN_CLEAR,
+          expect.anything(),
+        );
+        expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
+          FILE_SCAN_INFECTED,
+          expect.anything(),
+        );
       });
     });
   });
