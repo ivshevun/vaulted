@@ -4,7 +4,13 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Server } from 'http';
 import request from 'supertest';
-import { clearS3Bucket, poll, setupE2e, uploadFileToS3 } from '../utils';
+import {
+  clearS3Bucket,
+  poll,
+  publishAntivirusMessage,
+  setupE2e,
+  uploadFileToS3,
+} from '../utils';
 import { v4 as uuid } from 'uuid';
 import { PrismaService as FilesPrismaService } from '@apps/files/src/prisma';
 import { FileStatus } from '@prisma/files-client';
@@ -158,6 +164,35 @@ describe('Files e2e', () => {
         });
 
         expect(file?.status).toBe(FileStatus.FAILED);
+      });
+
+      it('should set file status to FAILED when max retries are exhausted', async () => {
+        const userId = key.split('/')[0];
+
+        await publishAntivirusMessage(configService, { key, userId }, 5);
+
+        await poll(async () => {
+          const file = await prisma.file.findUnique({ where: { key } });
+          return file?.status === FileStatus.FAILED;
+        });
+
+        const file = await prisma.file.findUnique({ where: { key } });
+        expect(file?.status).toBe(FileStatus.FAILED);
+      });
+
+      it('should set file status to CLEAN after a successful scan', async () => {
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send({ key })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        await poll(async () => {
+          const file = await prisma.file.findUnique({ where: { key } });
+          return file?.status === FileStatus.CLEAN;
+        });
+
+        const file = await prisma.file.findUnique({ where: { key } });
+        expect(file?.status).toBe(FileStatus.CLEAN);
       });
 
       it('should delete infected file from DB and S3', async () => {
