@@ -1,5 +1,5 @@
 import { pinoConfig } from '@app/common';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, NoSuchKey, S3Client } from '@aws-sdk/client-s3';
 import { ConfigModule } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -130,24 +130,103 @@ describe('AntivirusService', () => {
         });
       });
     });
-    describe('when s3 download fails', () => {
-      const s3UnavailableMessage = 'S3 unavailable';
-
-      beforeEach(() => {
-        s3Mock.on(GetObjectCommand).rejects(new Error(s3UnavailableMessage));
-      });
-      it('should rethrow the error', async () => {
+    describe('when S3 file is not found', () => {
+      it('should emit FILE_SCAN_FAILED when S3 throws NoSuchKey', async () => {
         const payload = makeFileUploadedPayload();
-        await expect(service.scan(payload)).rejects.toThrow(
-          s3UnavailableMessage,
+        s3Mock
+          .on(GetObjectCommand)
+          .rejects(new NoSuchKey({ message: 'NoSuchKey', $metadata: {} }));
+
+        await service.scan(payload);
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_FAILED, {
+          key: payload.key,
+        });
+      });
+
+      it('should not rethrow when S3 throws NoSuchKey', async () => {
+        s3Mock
+          .on(GetObjectCommand)
+          .rejects(new NoSuchKey({ message: 'NoSuchKey', $metadata: {} }));
+
+        await expect(
+          service.scan(makeFileUploadedPayload()),
+        ).resolves.not.toThrow();
+      });
+
+      it('should not emit FILE_SCAN_STARTED when S3 throws NoSuchKey', async () => {
+        s3Mock
+          .on(GetObjectCommand)
+          .rejects(new NoSuchKey({ message: 'NoSuchKey', $metadata: {} }));
+
+        await service.scan(makeFileUploadedPayload());
+
+        expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
+          FILE_SCAN_STARTED,
+          expect.anything(),
         );
       });
-      it('should emit nothing', async () => {
+
+      it('should emit FILE_SCAN_FAILED when S3 body is missing', async () => {
         const payload = makeFileUploadedPayload();
+        s3Mock.on(GetObjectCommand).resolves({});
 
-        await service.scan(payload).catch(() => {});
+        await service.scan(payload);
 
-        expect(filesProxyMock.emit).not.toHaveBeenCalled();
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_FAILED, {
+          key: payload.key,
+        });
+      });
+
+      it('should not rethrow when S3 body is missing', async () => {
+        s3Mock.on(GetObjectCommand).resolves({});
+
+        await expect(
+          service.scan(makeFileUploadedPayload()),
+        ).resolves.not.toThrow();
+      });
+
+      it('should not emit FILE_SCAN_STARTED when S3 body is missing', async () => {
+        s3Mock.on(GetObjectCommand).resolves({});
+
+        await service.scan(makeFileUploadedPayload());
+
+        expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
+          FILE_SCAN_STARTED,
+          expect.anything(),
+        );
+      });
+    });
+
+    describe('when S3 has a transient error', () => {
+      const s3TransientError = new Error('S3 unavailable');
+
+      beforeEach(() => {
+        s3Mock.on(GetObjectCommand).rejects(s3TransientError);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.scan(makeFileUploadedPayload())).rejects.toThrow(
+          s3TransientError,
+        );
+      });
+
+      it('should not emit FILE_SCAN_FAILED', async () => {
+        await service.scan(makeFileUploadedPayload()).catch(() => {});
+
+        expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
+          FILE_SCAN_FAILED,
+          expect.anything(),
+        );
+      });
+
+      it('should not emit FILE_SCAN_STARTED', async () => {
+        await service.scan(makeFileUploadedPayload()).catch(() => {});
+
+        expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
+          FILE_SCAN_STARTED,
+          expect.anything(),
+        );
       });
     });
     describe('when ClamAV throws', () => {
@@ -177,6 +256,10 @@ describe('AntivirusService', () => {
         );
         expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
           FILE_SCAN_INFECTED,
+          expect.anything(),
+        );
+        expect(filesProxyMock.emit).not.toHaveBeenCalledWith(
+          FILE_SCAN_FAILED,
           expect.anything(),
         );
       });

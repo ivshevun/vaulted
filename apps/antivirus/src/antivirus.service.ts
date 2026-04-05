@@ -1,10 +1,10 @@
 import { createS3Client, FileUploadedPayload } from '@app/common';
 import { ANTIVIRUS_MAX_RETRIES } from './antivirus.constants';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Nodeclam from 'clamscan';
 import { Readable } from 'stream';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, NoSuchKey } from '@aws-sdk/client-s3';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import {
   FILE_SCAN_FAILED,
@@ -12,6 +12,7 @@ import {
   RMQ_EXCHANGE,
 } from '@app/common/constants';
 import { ClientProxy } from '@nestjs/microservices';
+import { S3FileNotFoundError } from './antivirus.errors';
 
 @Injectable()
 export class AntivirusService {
@@ -52,41 +53,37 @@ export class AntivirusService {
 
       this.eventBus.emit('file.scan.clear', { key });
     } catch (err: unknown) {
-      this.logger.error({ key, err }, 'Virus scan failed');
+      if (err instanceof S3FileNotFoundError) {
+        this.logger.warn(
+          { key },
+          'File not found in S3, marking scan as failed',
+        );
+        this.eventBus.emit(FILE_SCAN_FAILED, { key });
+        return;
+      }
 
+      this.logger.error({ key, err }, 'Virus scan failed');
       throw err;
     }
   }
 
   private async getFileStream(key: string): Promise<Readable> {
     const bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME');
-
     const s3 = createS3Client(this.configService);
-
-    const command = new GetObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-    });
+    const command = new GetObjectCommand({ Bucket: bucketName, Key: key });
 
     try {
       const fileObject = await s3.send(command);
 
       if (!fileObject.Body) {
-        this.logger.warn({ key, bucket: bucketName }, 'S3 object has no body');
-
-        throw new NotFoundException(`File not found: ${key}`);
+        throw new S3FileNotFoundError(`S3 object has no body: ${key}`);
       }
 
       return fileObject.Body as Readable;
     } catch (err: unknown) {
-      this.logger.error(
-        {
-          key,
-          bucket: bucketName,
-          err,
-        },
-        'Failed to fetch file from S3',
-      );
+      if (err instanceof NoSuchKey) {
+        throw new S3FileNotFoundError(`File not found in S3: ${key}`);
+      }
 
       throw err;
     }
@@ -104,7 +101,6 @@ export class AntivirusService {
       });
     } catch (err: unknown) {
       this.logger.error({ err }, 'Failed to initialize ClamAV');
-
       throw err;
     }
   }
