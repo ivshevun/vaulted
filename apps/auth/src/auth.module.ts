@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { UsersService } from './users';
+import { UsersService } from './users/src/users.service';
 import { ConfigModule } from '@nestjs/config';
 import { TokenModule } from './token';
 import Joi from 'joi';
@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategies';
 import { PrismaModule } from './prisma';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
+import { UsersModule } from '@apps/auth/src/users/src/users.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { pinoConfig } from '@app/common';
       }),
     }),
     LoggerModule.forRoot(pinoConfig),
+    UsersModule,
     PrismaModule,
     TokenModule,
   ],

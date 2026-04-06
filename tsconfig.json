@@ -22,6 +22,8 @@
     "paths": {
       "@app/common": ["libs/common/src"],
       "@app/common/*": ["libs/common/src/*"],
+      "@app/common-tests": ["libs/common/tests"],
+      "@app/common-tests/*": ["libs/common/tests/*"],
       "@apps/*": ["apps/*"]
     },
     "jsx": "react"

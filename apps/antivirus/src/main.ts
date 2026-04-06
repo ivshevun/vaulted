@@ -4,6 +4,12 @@ import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { MicroserviceExceptionFilter } from '@app/common';
 import { Logger } from 'nestjs-pino';
+import {
+  ANTIVIRUS_DLX,
+  ANTIVIRUS_QUEUE,
+  FILE_UPLOADED,
+  RMQ_EXCHANGE,
+} from '@app/common/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AntivirusModule, {
@@ -15,10 +21,19 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [configService.get<string>('RABBITMQ_URL')!],
-      queue: 'antivirus_queue',
+      queue: ANTIVIRUS_QUEUE,
+      noAck: false,
       queueOptions: {
         durable: true,
+        arguments: {
+          'x-dead-letter-exchange': ANTIVIRUS_DLX,
+          'x-dead-letter-routing-key': FILE_UPLOADED,
+        } as Record<string, string>,
       },
+      wildcards: true,
+      exchangeType: 'topic',
+      exchange: RMQ_EXCHANGE,
+      routingKey: FILE_UPLOADED,
     },
   });
 

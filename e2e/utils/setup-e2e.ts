@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ApiGatewayModule } from '@apps/api-gateway/src/api-gateway.module';
-import { HttpRpcExceptionInterceptor } from '@apps/api-gateway/src/auth/interceptors';
+import { HttpRpcExceptionInterceptor } from '@apps/api-gateway/src/auth/src/interceptors';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { Server } from 'http';

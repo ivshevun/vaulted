@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
-import { HttpRpcExceptionInterceptor } from './auth/interceptors';
+import { HttpRpcExceptionInterceptor } from './auth/src/interceptors';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 
@@ -12,7 +12,7 @@ async function bootstrap() {
   });
 
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.use(cookieParser());
   app.useLogger(app.get(Logger));
 

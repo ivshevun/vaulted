@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsMimeType, IsNotEmpty, IsString } from 'class-validator';
 
 export class GetUploadDataDto {
   @ApiProperty()
@@ -8,7 +8,6 @@ export class GetUploadDataDto {
   filename: string;
 
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
+  @IsMimeType()
   contentType: string;
 }

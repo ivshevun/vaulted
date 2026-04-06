@@ -26,10 +26,6 @@ describe('Auth (e2e)', () => {
     await app.close();
   });
 
-  // beforeEach(async () => {
-  //   await prisma.file.deleteMany();
-  // });
-
   describe('Auth', () => {
     describe('Register', () => {
       let registerDto: RegisterDto;
@@ -58,15 +54,21 @@ describe('Auth (e2e)', () => {
         expect(response.body).toHaveProperty('accessToken');
         expect(typeof body.accessToken).toBe('string');
       });
-      it('should set a refresh token to a set-cookie header', async () => {
+      it('should set a refreshToken cookie with correct security flags', async () => {
         const response = await request(httpServer)
           .post('/auth/register')
           .send(registerDto)
           .expect(201);
 
         const cookies = response.header['set-cookie'] as unknown as string[];
-        expect(cookies).toBeDefined();
-        expect(cookies.some((cookie) => cookie.startsWith('refreshToken')));
+        const refreshCookie = cookies.find((cookie) =>
+          cookie.startsWith('refreshToken='),
+        );
+
+        expect(refreshCookie).toBeDefined();
+        expect(refreshCookie).toContain('HttpOnly');
+        expect(refreshCookie).toContain('Secure');
+        expect(refreshCookie).toContain('SameSite=Lax');
       });
       it('should save a user in DB if user is created', async () => {
         await request(httpServer)
@@ -130,7 +132,7 @@ describe('Auth (e2e)', () => {
 
       beforeEach(async () => {
         registerDto = {
-          email: 'login@gmail.com',
+          email: `login+${uuid()}@gmail.com`,
           password: '123456',
           name: 'Login User',
         };
@@ -158,17 +160,20 @@ describe('Auth (e2e)', () => {
         expect(response.body).toHaveProperty('accessToken');
       });
 
-      it('should set a refresh token in the Set-Cookie header', async () => {
+      it('should set a refreshToken cookie with correct security flags', async () => {
         const response = await request(httpServer)
           .post('/auth/login')
           .send(loginDto);
 
         const cookies = response.header['set-cookie'] as unknown as string[];
+        const refreshCookie = cookies.find((cookie) =>
+          cookie.startsWith('refreshToken='),
+        );
 
-        expect(cookies).toBeDefined();
-        expect(
-          cookies.some((cookie) => cookie.startsWith('refreshToken')),
-        ).toBeTruthy();
+        expect(refreshCookie).toBeDefined();
+        expect(refreshCookie).toContain('HttpOnly');
+        expect(refreshCookie).toContain('Secure');
+        expect(refreshCookie).toContain('SameSite=Lax');
       });
 
       it('should return 401 if email is invalid', async () => {
@@ -255,16 +260,21 @@ describe('Auth (e2e)', () => {
         expect(typeof body.accessToken).toBe('string');
       });
 
-      it('should set a new refresh token to a set-cookie header', async () => {
+      it('should set a new refreshToken cookie with correct security flags', async () => {
         const response = await request(httpServer)
           .post('/auth/refresh')
           .set('Cookie', [`refreshToken=${refreshToken}`])
           .expect(200);
 
         const cookies = response.header['set-cookie'] as unknown as string[];
-        expect(
-          cookies.some((cookie) => cookie.startsWith('refreshToken=')),
-        ).toBe(true);
+        const refreshCookie = cookies.find((cookie) =>
+          cookie.startsWith('refreshToken='),
+        );
+
+        expect(refreshCookie).toBeDefined();
+        expect(refreshCookie).toContain('HttpOnly');
+        expect(refreshCookie).toContain('Secure');
+        expect(refreshCookie).toContain('SameSite=Lax');
       });
 
       it('should return 401 if no refresh token is provided', async () => {

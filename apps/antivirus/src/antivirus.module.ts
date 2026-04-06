@@ -6,6 +6,8 @@ import Joi from 'joi';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
+import { RMQ_EXCHANGE } from '@app/common/constants';
+import { AntivirusDlxSetupService } from '@apps/antivirus/src/antivirus-dlx-setup.service';
 
 @Module({
   imports: [
@@ -22,15 +24,14 @@ import { pinoConfig } from '@app/common';
     }),
     ClientsModule.registerAsync([
       {
-        name: 'files',
+        name: RMQ_EXCHANGE,
         useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')!],
-            queue: 'files_queue',
-            queueOptions: {
-              durable: true,
-            },
+            exchange: RMQ_EXCHANGE,
+            exchangeType: 'topic',
+            wildcards: true,
           },
         }),
         inject: [ConfigService],
@@ -39,6 +40,6 @@ import { pinoConfig } from '@app/common';
     LoggerModule.forRoot(pinoConfig),
   ],
   controllers: [AntivirusController],
-  providers: [AntivirusService],
+  providers: [AntivirusService, AntivirusDlxSetupService],
 })
 export class AntivirusModule {}
