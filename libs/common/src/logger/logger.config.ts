@@ -2,8 +2,11 @@ import { Params } from 'nestjs-pino';
 
 export const pinoConfig: Params = {
   pinoHttp: {
-    timestamp: () =>
-      `,"time":"${new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kiev' })}"`,
+    customLogLevel: (_req, res, err) => {
+      if (err || res.statusCode >= 500) return 'error';
+      if (res.statusCode >= 400) return 'warn';
+      return 'info';
+    },
     transport:
       process.env.NODE_ENV !== 'production'
         ? {
@@ -11,7 +14,10 @@ export const pinoConfig: Params = {
             options: {
               colorize: true,
               singleLine: true,
-              translateTime: 'SYS:yyyy-MM-dd HH:mm:ss',
+              translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+              messageFormat:
+                '{req.method} {req.url} {res.statusCode} - {responseTime}ms | {msg}',
+              ignore: 'pid,hostname,req,res',
             },
           }
         : undefined,
