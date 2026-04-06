@@ -1,7 +1,7 @@
 import amqplib from 'amqplib';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadedPayload } from '@app/common';
-import { FILE_UPLOADED } from '@app/common/constants';
+import { ANTIVIRUS_QUEUE, FILE_UPLOADED } from '@app/common/constants';
 
 export async function publishAntivirusMessage(
   configService: ConfigService,
@@ -13,7 +13,7 @@ export async function publishAntivirusMessage(
   const channel = await connection.createChannel();
 
   channel.sendToQueue(
-    'antivirus_queue',
+    ANTIVIRUS_QUEUE,
     Buffer.from(JSON.stringify({ pattern: FILE_UPLOADED, data: payload })),
     { headers: { 'x-death': [{ count: retryCount }] } },
   );

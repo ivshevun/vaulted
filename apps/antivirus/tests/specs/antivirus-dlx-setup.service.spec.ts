@@ -1,4 +1,10 @@
 import { pinoConfig } from '@app/common';
+import {
+  ANTIVIRUS_DLX,
+  ANTIVIRUS_RETRY_QUEUE,
+  FILE_UPLOADED,
+  RMQ_EXCHANGE,
+} from '@app/common/constants';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { LoggerModule } from 'nestjs-pino';
@@ -43,7 +49,7 @@ describe('AntivirusDlxSetupService', () => {
       await service.onApplicationBootstrap();
 
       expect(mockChannel.assertExchange).toHaveBeenCalledWith(
-        'antivirus_dlx',
+        ANTIVIRUS_DLX,
         'direct',
         { durable: true },
       );
@@ -53,13 +59,13 @@ describe('AntivirusDlxSetupService', () => {
       await service.onApplicationBootstrap();
 
       expect(mockChannel.assertQueue).toHaveBeenCalledWith(
-        'antivirus_retry_queue',
+        ANTIVIRUS_RETRY_QUEUE,
         {
           durable: true,
           arguments: {
             'x-message-ttl': 30_000,
-            'x-dead-letter-exchange': 'vaulted.events',
-            'x-dead-letter-routing-key': 'file.uploaded',
+            'x-dead-letter-exchange': RMQ_EXCHANGE,
+            'x-dead-letter-routing-key': FILE_UPLOADED,
           },
         },
       );
@@ -69,9 +75,9 @@ describe('AntivirusDlxSetupService', () => {
       await service.onApplicationBootstrap();
 
       expect(mockChannel.bindQueue).toHaveBeenCalledWith(
-        'antivirus_retry_queue',
-        'antivirus_dlx',
-        'file.uploaded',
+        ANTIVIRUS_RETRY_QUEUE,
+        ANTIVIRUS_DLX,
+        FILE_UPLOADED,
       );
     });
 

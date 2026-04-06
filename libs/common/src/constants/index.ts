@@ -16,3 +16,10 @@ export {
   FILE_GET_READ_URL,
   FILE_CONFIRM_UPLOAD,
 } from './messages.constants';
+export {
+  AUTH_QUEUE,
+  FILES_QUEUE,
+  ANTIVIRUS_QUEUE,
+  ANTIVIRUS_DLX,
+  ANTIVIRUS_RETRY_QUEUE,
+} from './queues.constants';

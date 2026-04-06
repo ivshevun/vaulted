@@ -6,7 +6,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
-import { RMQ_EXCHANGE } from '@app/common/constants';
+import { AUTH_QUEUE, FILES_QUEUE, RMQ_EXCHANGE } from '@app/common/constants';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { RMQ_EXCHANGE } from '@app/common/constants';
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')!],
-            queue: 'auth_queue',
+            queue: AUTH_QUEUE,
             queueOptions: {
               durable: true,
             },
@@ -31,7 +31,7 @@ import { RMQ_EXCHANGE } from '@app/common/constants';
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')!],
-            queue: 'files_queue',
+            queue: FILES_QUEUE,
             queueOptions: {
               durable: true,
             },

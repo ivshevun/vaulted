@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { FilesModule } from './files.module';
 import { Logger } from 'nestjs-pino';
-import { RMQ_EXCHANGE } from '@app/common/constants';
+import { FILES_QUEUE, RMQ_EXCHANGE } from '@app/common/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(FilesModule, {
@@ -15,7 +15,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [configService.get<string>('RABBITMQ_URL')!],
-      queue: 'files_queue',
+      queue: FILES_QUEUE,
       queueOptions: {
         durable: true,
       },

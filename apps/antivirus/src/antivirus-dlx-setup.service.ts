@@ -1,13 +1,14 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import amqplib from 'amqplib';
-import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import {
   ANTIVIRUS_DLX,
   ANTIVIRUS_RETRY_QUEUE,
-  ANTIVIRUS_RETRY_TTL_MS,
-} from './antivirus.constants';
+  FILE_UPLOADED,
+  RMQ_EXCHANGE,
+} from '@app/common/constants';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { ANTIVIRUS_RETRY_TTL_MS } from './antivirus.constants';
 
 @Injectable()
 export class AntivirusDlxSetupService implements OnApplicationBootstrap {
