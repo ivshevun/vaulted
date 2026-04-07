@@ -8,6 +8,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
 import { RMQ_EXCHANGE } from '@app/common/constants';
 import { AntivirusDlxSetupService } from '@apps/antivirus/src/antivirus-dlx-setup.service';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { AntivirusDlxSetupService } from '@apps/antivirus/src/antivirus-dlx-setu
       },
     ]),
     LoggerModule.forRoot(pinoConfig),
+    HealthModule,
   ],
   controllers: [AntivirusController],
   providers: [AntivirusService, AntivirusDlxSetupService],
