@@ -4,12 +4,14 @@ import { NotificationsService } from './notifications.service';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    HealthModule,
     LoggerModule.forRoot(pinoConfig),
   ],
   controllers: [NotificationsController],
