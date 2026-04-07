@@ -20,6 +20,7 @@ import { HealthModule } from './health/health.module';
         AWS_S3_BUCKET_NAME: Joi.string().required(),
 
         RABBITMQ_URL: Joi.string().required(),
+        HTTP_PORT: Joi.number().integer().positive().required(),
       }),
       isGlobal: true,
     }),

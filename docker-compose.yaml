@@ -13,14 +13,18 @@ services:
     volumes:
       - ./apps:/usr/src/app/apps
       - ./libs:/usr/src/app/libs
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       postgres-auth:
         condition: service_healthy
       postgres-files:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      clamav:
         condition: service_healthy
   auth:
     restart: unless-stopped
@@ -31,15 +35,21 @@ services:
       dockerfile: ./apps/auth/Dockerfile
     env_file:
       - apps/auth/.env
+    ports:
+      - '3002:3002'
     volumes:
       - ./apps/auth:/usr/src/app/apps/auth
       - ./libs:/usr/src/app/libs
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3002/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       postgres-auth:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      clamav:
         condition: service_healthy
   files:
     restart: unless-stopped
@@ -50,9 +60,17 @@ services:
       dockerfile: ./apps/files/Dockerfile
     env_file:
       - apps/files/.env
+    ports:
+      - '3003:3003'
     volumes:
       - ./apps/files:/usr/src/app/apps/files
       - ./libs:/usr/src/app/libs
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3003/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       postgres-files:
         condition: service_healthy
@@ -69,9 +87,17 @@ services:
       dockerfile: ./apps/antivirus/Dockerfile
     env_file:
       - apps/antivirus/.env
+    ports:
+      - '3004:3004'
     volumes:
       - ./apps/antivirus:/usr/src/app/apps/antivirus
       - ./libs:/usr/src/app/libs
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3004/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       postgres-files:
         condition: service_healthy
@@ -88,11 +114,17 @@ services:
       dockerfile: ./apps/notifications/Dockerfile
     env_file:
       - apps/notifications/.env
+    ports:
+      - '5001:5001'
     volumes:
       - ./apps/notifications:/usr/src/app/apps/notifications
       - ./libs:/usr/src/app/libs
-    ports:
-      - '5001:5001'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
   postgres-files:
     image: postgres:latest
     container_name: vaulted-postgres-files
@@ -105,11 +137,15 @@ services:
       POSTGRES_DB: ${POSTGRES_FILES_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - pgdata-files:/var/lib/postgresql/data/pgdata
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_FILES_USER} -d ${POSTGRES_FILES_DB}" ]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_FILES_USER} -d ${POSTGRES_FILES_DB}',
+        ]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -129,11 +165,15 @@ services:
       POSTGRES_DB: ${POSTGRES_AUTH_DB}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5434:5432"
+      - '5434:5432'
     volumes:
       - pgdata-auth:/var/lib/postgresql/data/pgdata
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER} -d ${POSTGRES_AUTH_DB}" ]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_AUTH_USER} -d ${POSTGRES_AUTH_DB}',
+        ]
       interval: 5s
       timeout: 3s
       retries: 3
@@ -151,10 +191,10 @@ services:
     volumes:
       - rabbitmq:/var/lib/rabbitmq
     ports:
-      - "15672:15672"
-      - "5672:5672"
+      - '15672:15672'
+      - '5672:5672'
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -167,7 +207,8 @@ services:
       - '3310:3310'
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "sh", "-c", "echo PING | nc -w 1 127.0.0.1 3310 | grep PONG" ]
+      test:
+        ['CMD', 'sh', '-c', 'echo PING | nc -w 1 127.0.0.1 3310 | grep PONG']
       interval: 10s
       timeout: 3s
       retries: 20
