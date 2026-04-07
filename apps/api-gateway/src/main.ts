@@ -5,11 +5,13 @@ import cookieParser from 'cookie-parser';
 import { HttpRpcExceptionInterceptor } from './auth/src/interceptors';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule, {
     bufferLogs: true,
   });
+  const configService = app.get(ConfigService);
 
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -28,7 +30,7 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
 
-  await app.listen(3001);
+  await app.listen(configService.get<number>('HTTP_PORT')!);
 }
 
 void bootstrap();

@@ -3,15 +3,25 @@ import { AuthModule } from './auth/src/auth.module';
 import { FilesController } from './files/src/files.controller';
 import { FilesModule } from './files/src/files.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
 import { AUTH_QUEUE, FILES_QUEUE, RMQ_EXCHANGE } from '@app/common/constants';
 import { HealthModule } from './health/health.module';
+import Joi from 'joi';
 
 @Module({
   imports: [
     HealthModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationOptions: {
+        convert: true,
+      },
+      validationSchema: Joi.object({
+        HTTP_PORT: Joi.number().integer().positive().required(),
+      }),
+    }),
     ClientsModule.registerAsync([
       {
         name: 'auth',
