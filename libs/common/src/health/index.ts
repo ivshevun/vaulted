@@ -1,1 +1,3 @@
-export { RmqHealthIndicator } from './rmq.health-indicator';
+export * from './constants';
+export * from './interfaces';
+export * from './health-indicators';
