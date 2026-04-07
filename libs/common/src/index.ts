@@ -6,3 +6,4 @@ export * from './payloads';
 export * from './utils';
 export * from './types';
 export * from './logger';
+export * from './health';
