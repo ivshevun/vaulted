@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { HealthModule } from './health/health.module';
 import Joi from 'joi';
 import { PrismaModule } from './prisma';
 import { pinoConfig } from '@app/common';
@@ -12,6 +13,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 @Module({
   imports: [
     PrismaModule,
+    HealthModule,
     LoggerModule.forRoot(pinoConfig),
     ConfigModule.forRoot({
       isGlobal: true,
