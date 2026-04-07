@@ -62,6 +62,12 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+      auth:
+        condition: service_healthy
+      files:
+        condition: service_healthy
+      antivirus:
+        condition: service_healthy
   auth:
     restart: unless-stopped
     container_name: vaulted-auth-test
