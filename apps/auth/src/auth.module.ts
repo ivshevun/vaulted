@@ -34,6 +34,7 @@ import { HealthModule } from './health/health.module';
 
         AUTH_DATABASE_URL: Joi.string().required(),
         RABBITMQ_URL: Joi.string().required(),
+        HTTP_PORT: Joi.number().integer().positive().required(),
       }),
     }),
     LoggerModule.forRoot(pinoConfig),

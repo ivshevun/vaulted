@@ -41,7 +41,10 @@ async function bootstrap() {
 
   app.useGlobalFilters(new MicroserviceExceptionFilter());
 
-  await app.startAllMicroservices();
+  await Promise.all([
+    app.startAllMicroservices(),
+    app.listen(configService.get<number>('HTTP_PORT')!),
+  ]);
 }
 
 void bootstrap();
