@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
 import { UsersModule } from '@apps/auth/src/users/src/users.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UsersModule } from '@apps/auth/src/users/src/users.module';
       }),
     }),
     LoggerModule.forRoot(pinoConfig),
+    HealthModule,
     UsersModule,
     PrismaModule,
     TokenModule,

@@ -7,9 +7,11 @@ import { ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
 import { AUTH_QUEUE, FILES_QUEUE, RMQ_EXCHANGE } from '@app/common/constants';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
+    HealthModule,
     ClientsModule.registerAsync([
       {
         name: 'auth',
