@@ -14,11 +14,11 @@ services:
       - ./apps:/usr/src/app/apps
       - ./libs:/usr/src/app/libs
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3001/health']
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -41,11 +41,11 @@ services:
       - ./apps/auth:/usr/src/app/apps/auth
       - ./libs:/usr/src/app/libs
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3002/health']
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3002/health']
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -66,11 +66,11 @@ services:
       - ./apps/files:/usr/src/app/apps/files
       - ./libs:/usr/src/app/libs
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3003/health']
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3003/health']
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-files:
         condition: service_healthy
@@ -91,11 +91,11 @@ services:
       - ./apps/antivirus:/usr/src/app/apps/antivirus
       - ./libs:/usr/src/app/libs
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3004/health']
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3004/health']
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-files:
         condition: service_healthy
@@ -118,11 +118,11 @@ services:
       - ./apps/notifications:/usr/src/app/apps/notifications
       - ./libs:/usr/src/app/libs
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:5001/health']
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:5001/health']
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
   postgres-files:
     image: postgres:latest
     container_name: vaulted-postgres-files
