@@ -52,7 +52,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-files:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -112,7 +112,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-files:
         condition: service_healthy
@@ -139,7 +139,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     depends_on:
       postgres-files:
         condition: service_healthy
