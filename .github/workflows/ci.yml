@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   ci:
@@ -28,19 +28,19 @@ jobs:
         run: |
           echo "${{ secrets.AUTH_ENV_TEST }}" > apps/auth/.env.test
           echo "${{ secrets.AUTH_ENV_TEST }}" > apps/auth/.env
-          
+
           echo "${{ secrets.FILES_ENV_TEST }}" > apps/files/.env.test
           echo "${{ secrets.FILES_ENV_TEST }}" > apps/files/.env
-          
+
           echo "${{ secrets.API_GATEWAY_ENV_TEST }}" > apps/api-gateway/.env.test
           echo "${{ secrets.API_GATEWAY_ENV_TEST }}" > apps/api-gateway/.env
-          
+
           echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env.test
           echo "${{ secrets.ANTIVIRUS_ENV_TEST }}" > apps/antivirus/.env
-          
+
           echo "${{ secrets.NOTIFICATIONS_ENV_TEST }}" > apps/notifications/.env.test
           echo "${{ secrets.NOTIFICATIONS_ENV_TEST }}" > apps/notifications/.env
-          
+
           echo "${{ secrets.ENV_TEST }}" > .env.test
           echo "${{ secrets.ENV_TEST }}" > .env
 
@@ -65,7 +65,7 @@ jobs:
         run: pnpm test
 
       - name: Run docker compose
-        run: docker compose -f docker-compose.e2e.yaml up --build -d
+        run: docker compose -f docker-compose.e2e.yaml up --build -d --wait
 
       - name: Run migrations inside docker compose
         run: |
