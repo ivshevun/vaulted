@@ -15,7 +15,7 @@ import * as matchers from 'aws-sdk-client-mock-jest';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { LoggerModule } from 'nestjs-pino';
 import { FilesService } from '../../src/files.service';
-import { PrismaService } from '../../src/prisma';
+import { FilesRepository } from '../../src/files.repository';
 import { makeGetUploadDataPayload } from '@apps/files/tests/utils';
 import { makeFileUploadedPayload } from '@app/common-tests';
 import { File, FileStatus } from '@prisma/files-client';
@@ -28,12 +28,12 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
 
 describe('FilesService', () => {
   let service: FilesService;
-  let prismaServiceMock: DeepMockProxy<PrismaService>;
+  let filesRepositoryMock: DeepMockProxy<FilesRepository>;
   let eventBusMock: DeepMockProxy<ClientProxy>;
   let s3Mock: AwsClientStub<S3Client>;
 
   beforeEach(async () => {
-    prismaServiceMock = mockDeep();
+    filesRepositoryMock = mockDeep();
     eventBusMock = mockDeep();
     s3Mock = mockClient(S3Client);
 
@@ -46,7 +46,7 @@ describe('FilesService', () => {
       ],
       providers: [
         FilesService,
-        { provide: PrismaService, useValue: prismaServiceMock },
+        { provide: FilesRepository, useValue: filesRepositoryMock },
         { provide: RMQ_EXCHANGE, useValue: eventBusMock },
       ],
     }).compile();
@@ -159,9 +159,9 @@ describe('FilesService', () => {
       it('should delete the file record from DB', async () => {
         await service.onInfected(payload);
 
-        expect(prismaServiceMock.file.delete).toHaveBeenCalledWith({
-          where: { key: payload.key },
-        });
+        expect(filesRepositoryMock.deleteFile).toHaveBeenCalledWith(
+          payload.key,
+        );
       });
     });
 
@@ -179,7 +179,7 @@ describe('FilesService', () => {
       it('should not delete the DB record', async () => {
         await service.onInfected(payload).catch(() => {});
 
-        expect(prismaServiceMock.file.delete).not.toHaveBeenCalled();
+        expect(filesRepositoryMock.deleteFile).not.toHaveBeenCalled();
       });
     });
   });
@@ -202,16 +202,15 @@ describe('FilesService', () => {
     describe('when S3 and database succeed', () => {
       beforeEach(() => {
         s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
-        prismaServiceMock.file.update.mockResolvedValue(mockFileRecord);
+        filesRepositoryMock.updateFile.mockResolvedValue(mockFileRecord);
       });
 
       it('should update the file record with size from S3 and CLEAN status', async () => {
         await service.onClearFile(payload);
 
-        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
-          expect.objectContaining({
-            data: { size: fileSize, status: 'CLEAN' },
-          }),
+        expect(filesRepositoryMock.updateFile).toHaveBeenCalledWith(
+          payload.key,
+          { status: FileStatus.CLEAN, size: fileSize },
         );
       });
 
@@ -236,7 +235,7 @@ describe('FilesService', () => {
       it('should not save anything to the database', async () => {
         await service.onClearFile(payload).catch(() => {});
 
-        expect(prismaServiceMock.file.update).not.toHaveBeenCalled();
+        expect(filesRepositoryMock.updateFile).not.toHaveBeenCalled();
       });
     });
 
@@ -245,7 +244,7 @@ describe('FilesService', () => {
 
       beforeEach(() => {
         s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
-        prismaServiceMock.file.update.mockRejectedValue(dbError);
+        filesRepositoryMock.updateFile.mockRejectedValue(dbError);
       });
 
       it('should rethrow the error', async () => {
@@ -259,17 +258,15 @@ describe('FilesService', () => {
 
     describe('when database update succeeds', () => {
       beforeEach(() => {
-        prismaServiceMock.file.update.mockResolvedValue({} as File);
+        filesRepositoryMock.updateFile.mockResolvedValue({} as File);
       });
 
       it('should update the file status to FAILED', async () => {
         await service.onScanFailed(payload);
 
-        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
-          expect.objectContaining({
-            where: { key: payload.key },
-            data: { status: 'FAILED' },
-          }),
+        expect(filesRepositoryMock.updateFile).toHaveBeenCalledWith(
+          payload.key,
+          { status: FileStatus.FAILED },
         );
       });
     });
@@ -278,7 +275,7 @@ describe('FilesService', () => {
       const dbError = new Error('DB connection lost');
 
       beforeEach(() => {
-        prismaServiceMock.file.update.mockRejectedValue(dbError);
+        filesRepositoryMock.updateFile.mockRejectedValue(dbError);
       });
 
       it('should rethrow the error', async () => {
@@ -292,17 +289,15 @@ describe('FilesService', () => {
 
     describe('when database update succeeds', () => {
       beforeEach(() => {
-        prismaServiceMock.file.update.mockResolvedValue({} as File);
+        filesRepositoryMock.updateFile.mockResolvedValue({} as File);
       });
 
       it('should update the file status to SCANNING', async () => {
         await service.onScanStarted(payload);
 
-        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
-          expect.objectContaining({
-            where: { key: payload.key },
-            data: { status: 'SCANNING' },
-          }),
+        expect(filesRepositoryMock.updateFile).toHaveBeenCalledWith(
+          payload.key,
+          { status: FileStatus.SCANNING },
         );
       });
     });
@@ -311,7 +306,7 @@ describe('FilesService', () => {
       const dbError = new Error('DB connection lost');
 
       beforeEach(() => {
-        prismaServiceMock.file.update.mockRejectedValue(dbError);
+        filesRepositoryMock.updateFile.mockRejectedValue(dbError);
       });
 
       it('should rethrow the error', async () => {
@@ -336,7 +331,7 @@ describe('FilesService', () => {
 
     describe('when no PENDING record exists in DB', () => {
       beforeEach(() => {
-        prismaServiceMock.file.findFirst.mockResolvedValue(null);
+        filesRepositoryMock.findPendingFile.mockResolvedValue(null);
       });
 
       it('should throw an RpcException with NOT_FOUND status', async () => {
@@ -353,18 +348,16 @@ describe('FilesService', () => {
       const s3Error = new Error('NoSuchKey');
 
       beforeEach(() => {
-        prismaServiceMock.file.findFirst.mockResolvedValue(mockPendingFile);
+        filesRepositoryMock.findPendingFile.mockResolvedValue(mockPendingFile);
         s3Mock.on(HeadObjectCommand).rejects(s3Error);
       });
 
       it('should update file status to FAILED', async () => {
         await service.confirmUpload(payload).catch(() => {});
 
-        expect(prismaServiceMock.file.update).toHaveBeenCalledWith(
-          expect.objectContaining({
-            where: { key: payload.key },
-            data: { status: 'FAILED' },
-          }),
+        expect(filesRepositoryMock.updateFile).toHaveBeenCalledWith(
+          payload.key,
+          { status: FileStatus.FAILED },
         );
       });
 
@@ -377,7 +370,7 @@ describe('FilesService', () => {
 
     describe('when PENDING record exists and file is in S3', () => {
       beforeEach(() => {
-        prismaServiceMock.file.findFirst.mockResolvedValue(mockPendingFile);
+        filesRepositoryMock.findPendingFile.mockResolvedValue(mockPendingFile);
         s3Mock.on(HeadObjectCommand).resolves({});
       });
 
