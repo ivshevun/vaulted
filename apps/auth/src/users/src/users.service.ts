@@ -1,23 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/auth-client';
 import argon from 'argon2';
-import { PrismaService } from '../../prisma';
+import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly usersRepository: UsersRepository) {}
 
-  async create(createUserDto: Prisma.UserCreateInput) {
+  async create(createUserDto: Prisma.UserCreateInput): Promise<User> {
     const hashedPassword = await argon.hash(createUserDto.password);
 
-    return this.prisma.user.create({
-      data: { ...createUserDto, password: hashedPassword },
+    return this.usersRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
     });
   }
 
   findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
+    return this.usersRepository.findByEmail(email);
   }
 }
