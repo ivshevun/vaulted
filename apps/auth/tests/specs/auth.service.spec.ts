@@ -10,7 +10,6 @@ import { User } from '@prisma/auth-client';
 import { HttpStatus } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { convertToUserDto } from '../../src/utils';
-import { PrismaService } from '../../src/prisma';
 import { LoggerModule } from 'nestjs-pino';
 import { UsersService } from '@apps/auth/src/users/src/users.service';
 
@@ -18,7 +17,6 @@ describe('AuthService', () => {
   let service: AuthService;
   let usersServiceMock: DeepMockProxy<UsersService>;
   let tokenServiceMock: DeepMockProxy<TokenService>;
-  let prismaServiceMock: DeepMockProxy<PrismaService>;
 
   const registerDto: RegisterDto = {
     name: 'john',
@@ -43,7 +41,6 @@ describe('AuthService', () => {
   beforeEach(async () => {
     usersServiceMock = mockDeep<UsersService>();
     tokenServiceMock = mockDeep<TokenService>();
-    prismaServiceMock = mockDeep<PrismaService>();
 
     tokenServiceMock.signTokens.mockReturnValue(expectedTokens);
 
@@ -57,7 +54,6 @@ describe('AuthService', () => {
         AuthService,
         { provide: UsersService, useValue: usersServiceMock },
         { provide: TokenService, useValue: tokenServiceMock },
-        { provide: PrismaService, useValue: prismaServiceMock },
       ],
     }).compile();
 
