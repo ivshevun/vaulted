@@ -18,10 +18,10 @@ import { ConfigService } from '@nestjs/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { v4 as uuid } from 'uuid';
 import { getFileSize } from './utils';
-import { PrismaService } from './prisma';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
 import { FileStatus } from '@prisma/files-client';
+import { FilesRepository } from './files.repository';
 
 @Injectable()
 export class FilesService {
@@ -30,13 +30,12 @@ export class FilesService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly prismaService: PrismaService,
+    private readonly filesRepository: FilesRepository,
     @Inject(RMQ_EXCHANGE) private readonly eventBus: ClientProxy,
     @InjectPinoLogger() private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(FilesService.name);
     this.s3 = createS3Client(configService);
-
     this.bucketName = configService.get<string>('AWS_S3_BUCKET_NAME')!;
   }
 
@@ -59,8 +58,11 @@ export class FilesService {
         expiresIn: 60 * 5,
       });
 
-      await this.prismaService.file.create({
-        data: { key, filename, contentType, userId },
+      await this.filesRepository.createFile({
+        key,
+        filename,
+        contentType,
+        userId,
       });
 
       this.logger.info({ key, userId }, 'Upload URL generated');
@@ -112,7 +114,7 @@ export class FilesService {
         new DeleteObjectCommand({ Bucket: this.bucketName, Key: key }),
       );
 
-      await this.prismaService.file.delete({ where: { key } });
+      await this.filesRepository.deleteFile(key);
 
       this.logger.info({ key }, 'Infected file deleted');
     } catch (err: unknown) {
@@ -124,9 +126,8 @@ export class FilesService {
 
   async onScanFailed({ key }: KeyPayload) {
     try {
-      return await this.prismaService.file.update({
-        where: { key },
-        data: { status: FileStatus.FAILED },
+      return await this.filesRepository.updateFile(key, {
+        status: FileStatus.FAILED,
       });
     } catch (err: unknown) {
       this.logger.error({ key, err }, 'Failed to update file status to FAILED');
@@ -137,9 +138,8 @@ export class FilesService {
 
   async onScanStarted({ key }: KeyPayload) {
     try {
-      return await this.prismaService.file.update({
-        where: { key },
-        data: { status: 'SCANNING' },
+      return await this.filesRepository.updateFile(key, {
+        status: FileStatus.SCANNING,
       });
     } catch (err: unknown) {
       this.logger.error(
@@ -157,9 +157,9 @@ export class FilesService {
 
       this.logger.info({ key, size }, 'Marking file as clean');
 
-      return await this.prismaService.file.update({
-        where: { key },
-        data: { size, status: 'CLEAN' },
+      return await this.filesRepository.updateFile(key, {
+        status: FileStatus.CLEAN,
+        size,
       });
     } catch (err: unknown) {
       this.logger.error({ key, err }, 'Failed to mark file as clean');
@@ -169,9 +169,7 @@ export class FilesService {
   }
 
   async confirmUpload({ key, userId }: FileUploadedPayload) {
-    const file = await this.prismaService.file.findFirst({
-      where: { key, userId, status: 'PENDING' },
-    });
+    const file = await this.filesRepository.findPendingFile(key, userId);
 
     if (!file) {
       throw new RpcException({
@@ -185,10 +183,7 @@ export class FilesService {
         new HeadObjectCommand({ Bucket: this.bucketName, Key: key }),
       );
     } catch (err: unknown) {
-      await this.prismaService.file.update({
-        where: { key },
-        data: { status: 'FAILED' },
-      });
+      await this.filesRepository.updateFile(key, { status: FileStatus.FAILED });
 
       throw err;
     }

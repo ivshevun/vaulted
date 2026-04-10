@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { FilesController } from './files.controller';
+import { FilesRepository } from './files.repository';
 import { FilesService } from './files.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HealthModule } from './health/health.module';
@@ -47,6 +48,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     ]),
   ],
   controllers: [FilesController],
-  providers: [FilesService],
+  providers: [FilesService, FilesRepository],
 })
 export class FilesModule {}
