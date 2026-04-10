@@ -101,7 +101,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      clamav:
+      haproxy:
         condition: service_healthy
   notifications:
     restart: unless-stopped
@@ -197,12 +197,34 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-  clamav:
+  clamav-signatures:
     image: clamav/clamav:1.5
-    container_name: vaulted-clamav
+    container_name: vaulted-clamav-signatures
     platform: linux/amd64
-    ports:
-      - '3310:3310'
+    environment:
+      - CLAMAV_NO_CLAMD=true
+    volumes:
+      - clamav-signatures:/var/lib/clamav
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'test -f /var/lib/clamav/main.cvd || test -f /var/lib/clamav/main.cld',
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
+  clamd-1:
+    image: clamav/clamav:1.5
+    container_name: vaulted-clamd-1
+    platform: linux/amd64
+    environment:
+      - CLAMAV_NO_FRESHCLAM=true
+    volumes:
+      - clamav-signatures:/var/lib/clamav:ro
+      - ./haproxy/clamd.conf:/etc/clamav/clamd.conf:ro
     restart: unless-stopped
     healthcheck:
       test:
@@ -210,6 +232,50 @@ services:
       interval: 10s
       timeout: 3s
       retries: 20
+      start_period: 120s
+    depends_on:
+      clamav-signatures:
+        condition: service_healthy
+  clamd-2:
+    image: clamav/clamav:1.5
+    container_name: vaulted-clamd-2
+    platform: linux/amd64
+    environment:
+      - CLAMAV_NO_FRESHCLAM=true
+    volumes:
+      - clamav-signatures:/var/lib/clamav:ro
+      - ./haproxy/clamd.conf:/etc/clamav/clamd.conf:ro
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ['CMD', 'sh', '-c', 'echo PING | nc -w 1 127.0.0.1 3310 | grep PONG']
+      interval: 10s
+      timeout: 3s
+      retries: 20
+      start_period: 120s
+    depends_on:
+      clamav-signatures:
+        condition: service_healthy
+  haproxy:
+    image: haproxy:3.1-alpine
+    container_name: vaulted-haproxy
+    platform: linux/amd64
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - '3310:3310'
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'sh', '-c', 'nc -z localhost 3310']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      clamd-1:
+        condition: service_healthy
+      clamd-2:
+        condition: service_healthy
 
 volumes:
   pgdata-auth:
@@ -217,4 +283,6 @@ volumes:
   pgdata-files:
     driver: local
   rabbitmq:
+    driver: local
+  clamav-signatures:
     driver: local
