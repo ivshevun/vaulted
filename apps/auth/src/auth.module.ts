@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { UsersService } from './users/src/users.service';
 import { ConfigModule } from '@nestjs/config';
 import { TokenModule } from './token';
 import Joi from 'joi';
@@ -44,6 +43,6 @@ import { HealthModule } from './health/health.module';
     TokenModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, JwtStrategy],
+  providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
