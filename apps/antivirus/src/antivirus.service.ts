@@ -96,8 +96,8 @@ export class AntivirusService {
       return await new Nodeclam().init({
         removeInfected: true,
         clamdscan: {
-          host: 'clamav',
-          port: 3310,
+          host: this.configService.get<string>('CLAMAV_HOST'),
+          port: this.configService.get<number>('CLAMAV_PORT'),
           timeout: 60000,
         },
       });

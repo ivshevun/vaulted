@@ -21,6 +21,8 @@ import { HealthModule } from './health/health.module';
 
         RABBITMQ_URL: Joi.string().required(),
         HTTP_PORT: Joi.number().integer().positive().required(),
+        CLAMAV_HOST: Joi.string().required(),
+        CLAMAV_PORT: Joi.number().integer().positive().required(),
       }),
       isGlobal: true,
     }),

@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
+import { ConfigService } from '@nestjs/config';
 import net from 'net';
 import {
-  CLAMAV_HOST,
   CLAMAV_PING_COMMAND,
   CLAMAV_PING_TIMEOUT_MS,
   CLAMAV_PONG_RESPONSE,
-  CLAMAV_PORT,
 } from './clamav-health.constants';
 
 @Injectable()
 export class ClamavHealthIndicator {
   constructor(
     private readonly healthIndicatorService: HealthIndicatorService,
+    private readonly configService: ConfigService,
   ) {}
 
   async isHealthy(key: string) {
@@ -26,8 +26,10 @@ export class ClamavHealthIndicator {
   }
 
   private ping(): Promise<void> {
+    const host = this.configService.get<string>('CLAMAV_HOST')!;
+    const port = this.configService.get<number>('CLAMAV_PORT')!;
     return new Promise((resolve, reject) => {
-      const socket = net.createConnection(CLAMAV_PORT, CLAMAV_HOST);
+      const socket = net.createConnection(port, host);
 
       socket.setTimeout(CLAMAV_PING_TIMEOUT_MS);
 
