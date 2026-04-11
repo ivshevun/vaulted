@@ -306,8 +306,8 @@ services:
         ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8404/stats']
       interval: 10s
       timeout: 3s
-      retries: 5
-      start_period: 10s
+      retries: 10
+      start_period: 60s
     depends_on:
       clamd-1:
         condition: service_healthy
