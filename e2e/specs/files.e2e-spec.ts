@@ -1,4 +1,4 @@
-import { createS3Client, GetUploadDataDto } from '@app/common';
+import { createS3Client, GetUploadDataDto, KeyDto } from '@app/common';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -255,6 +255,79 @@ describe('Files e2e', () => {
           .send({})
           .set({ Authorization: `Bearer ${accessToken}` })
           .expect(400);
+      });
+    });
+
+    describe('file-status', () => {
+      let key: string;
+
+      beforeEach(async () => {
+        const uploadResponse = await request(httpServer)
+          .get('/files/upload-data')
+          .query({ filename: 'avatar.png', contentType: 'image/png' })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        key = (uploadResponse.body as KeyDto).key;
+
+        await uploadFileToS3(configService, key);
+
+        await request(httpServer)
+          .post('/files/confirm-upload')
+          .send({ key })
+          .set({ Authorization: `Bearer ${accessToken}` });
+      });
+
+      it('should eventually return CLEAN status after a successful scan', async () => {
+        await poll(async () => {
+          const response = await request(httpServer)
+            .get('/files/status')
+            .query({ key })
+            .set({ Authorization: `Bearer ${accessToken}` });
+
+          return (
+            (response.body as { status: string }).status === FileStatus.CLEAN
+          );
+        });
+
+        const response = await request(httpServer)
+          .get('/files/status')
+          .query({ key })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        expect((response.body as { status: string }).status).toBe(
+          FileStatus.CLEAN,
+        );
+      });
+
+      it('should return a 404 for an unknown key', async () => {
+        await request(httpServer)
+          .get('/files/status')
+          .query({ key: 'unknown/key' })
+          .set({ Authorization: `Bearer ${accessToken}` })
+          .expect(404);
+      });
+
+      it('should return a 403 if no access token provided', async () => {
+        await request(httpServer)
+          .get('/files/status')
+          .query({ key })
+          .expect(403);
+      });
+
+      it('should return a 404 for a key belonging to another user', async () => {
+        const otherEmail = `test+${uuid()}@gmail.com`;
+        const otherResponse = await request(httpServer)
+          .post('/auth/register')
+          .send({ email: otherEmail, password: '123456', name: 'Other User' });
+
+        const otherToken = (otherResponse.body as { accessToken: string })
+          .accessToken;
+
+        await request(httpServer)
+          .get('/files/status')
+          .query({ key })
+          .set({ Authorization: `Bearer ${otherToken}` })
+          .expect(404);
       });
     });
 
