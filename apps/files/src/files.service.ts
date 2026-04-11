@@ -26,6 +26,7 @@ import { FilesRepository } from './files.repository';
 @Injectable()
 export class FilesService {
   private readonly s3: S3Client;
+  private readonly s3Presigner: S3Client;
   private readonly bucketName: string;
 
   constructor(
@@ -36,6 +37,7 @@ export class FilesService {
   ) {
     this.logger.setContext(FilesService.name);
     this.s3 = createS3Client(configService);
+    this.s3Presigner = createS3Client(configService, 'AWS_S3_PUBLIC_ENDPOINT');
     this.bucketName = configService.get<string>('AWS_S3_BUCKET_NAME')!;
   }
 
@@ -54,7 +56,7 @@ export class FilesService {
         ContentType: contentType,
       });
 
-      const url = await getSignedUrl(this.s3, command, {
+      const url = await getSignedUrl(this.s3Presigner, command, {
         expiresIn: 60 * 5,
       });
 
@@ -89,7 +91,7 @@ export class FilesService {
         Key: key,
       });
 
-      const url = await getSignedUrl(this.s3, command, {
+      const url = await getSignedUrl(this.s3Presigner, command, {
         expiresIn: 60 * 5,
       });
 
