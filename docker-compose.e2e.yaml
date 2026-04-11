@@ -248,8 +248,8 @@ services:
     environment:
       - CLAMAV_NO_FRESHCLAM=true
     volumes:
-      - clamav-signatures:/var/lib/clamav:ro
-      - ./haproxy/clamd.conf:/etc/clamav/clamd.conf:ro
+      - clamav-signatures:/var/lib/clamav
+      - ./haproxy/clamd.conf:/etc/clamav/clamd.conf
     restart: unless-stopped
     healthcheck:
       test:
@@ -268,8 +268,8 @@ services:
     environment:
       - CLAMAV_NO_FRESHCLAM=true
     volumes:
-      - clamav-signatures:/var/lib/clamav:ro
-      - ./haproxy/clamd.conf:/etc/clamav/clamd.conf:ro
+      - clamav-signatures:/var/lib/clamav
+      - ./haproxy/clamd.conf:/etc/clamav/clamd.conf
     restart: unless-stopped
     healthcheck:
       test:
@@ -286,12 +286,14 @@ services:
     container_name: vaulted-haproxy-test
     platform: linux/amd64
     volumes:
-      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     ports:
       - '3310:3310'
+      - '8404:8404'
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'sh', '-c', 'nc -z localhost 3310']
+      test:
+        ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8404/stats']
       interval: 10s
       timeout: 3s
       retries: 5

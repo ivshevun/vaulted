@@ -223,7 +223,7 @@ services:
     environment:
       - CLAMAV_NO_FRESHCLAM=true
     volumes:
-      - clamav-signatures:/var/lib/clamav:ro
+      - clamav-signatures:/var/lib/clamav
       - ./haproxy/clamd.conf:/etc/clamav/clamd.conf:ro
     restart: unless-stopped
     healthcheck:
@@ -243,7 +243,7 @@ services:
     environment:
       - CLAMAV_NO_FRESHCLAM=true
     volumes:
-      - clamav-signatures:/var/lib/clamav:ro
+      - clamav-signatures:/var/lib/clamav
       - ./haproxy/clamd.conf:/etc/clamav/clamd.conf:ro
     restart: unless-stopped
     healthcheck:
@@ -264,9 +264,11 @@ services:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - '3310:3310'
+      - '8404:8404'
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'sh', '-c', 'nc -z localhost 3310']
+      test:
+        ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8404/stats']
       interval: 10s
       timeout: 3s
       retries: 5
