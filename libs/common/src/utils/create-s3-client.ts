@@ -1,8 +1,11 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 
-export function createS3Client(configService: ConfigService) {
-  const endpoint = configService.get<string>('AWS_S3_ENDPOINT');
+export function createS3Client(
+  configService: ConfigService,
+  endpointKey = 'AWS_S3_ENDPOINT',
+) {
+  const endpoint = configService.get<string>(endpointKey);
 
   return new S3Client({
     region: configService.get<string>('AWS_REGION')!,
