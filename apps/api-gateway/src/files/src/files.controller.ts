@@ -1,6 +1,8 @@
 import {
+  FileStatusDto,
   FileUploadedDto,
   FileUploadedPayload,
+  GetFileStatusPayload,
   GetUploadDataDto,
   GetUploadDataPayload,
   JwtGuard,
@@ -19,9 +21,18 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { catchError, firstValueFrom, timeout } from 'rxjs';
 import { CurrentUser } from '../../decorators';
-import { ConfirmUploadDocs, GetReadUrlDocs, GetUploadDataDocs } from './docs';
+import {
+  ConfirmUploadDocs,
+  GetFileStatusDocs,
+  GetReadUrlDocs,
+  GetUploadDataDocs,
+} from './docs';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { FILE_CONFIRM_UPLOAD, RMQ_EXCHANGE } from '@app/common/constants';
+import {
+  FILE_CONFIRM_UPLOAD,
+  FILE_GET_STATUS,
+  RMQ_EXCHANGE,
+} from '@app/common/constants';
 
 @UseGuards(JwtGuard)
 @Controller('files')
@@ -90,6 +101,33 @@ export class FilesController {
               layer: 'gateway',
               target: 'files',
               action: 'confirm-upload',
+              userId: user.id,
+              key: dto.key,
+            },
+            'Files service request failed',
+          );
+
+          throw err;
+        }),
+      ),
+    );
+  }
+
+  @GetFileStatusDocs()
+  @Get('status')
+  async getFileStatus(@Query() dto: KeyDto, @CurrentUser() user: UserDto) {
+    const payload: GetFileStatusPayload = { key: dto.key, userId: user.id };
+
+    return await firstValueFrom(
+      this.eventBus.send<FileStatusDto>(FILE_GET_STATUS, payload).pipe(
+        timeout(5000),
+        catchError((err: unknown) => {
+          this.logger.error(
+            {
+              err,
+              layer: 'gateway',
+              target: 'files',
+              action: 'get-file-status',
               userId: user.id,
               key: dto.key,
             },
