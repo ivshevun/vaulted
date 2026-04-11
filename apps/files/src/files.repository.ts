@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { File, FileStatus } from '@prisma/files-client';
+import { File } from '@prisma/files-client';
 import { PrismaService } from './prisma';
-import { CreateFileDto, UpdateFileDto } from './dto';
+import { CreateFileDto, QueryFileDto, UpdateFileDto } from './dto';
 
 @Injectable()
 export class FilesRepository {
@@ -22,9 +22,7 @@ export class FilesRepository {
     });
   }
 
-  findPendingFile(key: string, userId: string): Promise<File | null> {
-    return this.prisma.file.findFirst({
-      where: { key, userId, status: FileStatus.PENDING },
-    });
+  findFile(dto: QueryFileDto): Promise<File | null> {
+    return this.prisma.file.findFirst({ where: dto });
   }
 }

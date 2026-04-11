@@ -1,5 +1,6 @@
 import {
   FileUploadedPayload,
+  GetFileStatusPayload,
   GetUploadDataPayload,
   KeyPayload,
 } from '@app/common';
@@ -10,6 +11,7 @@ import { FilesService } from './files.service';
 import {
   FILE_CONFIRM_UPLOAD,
   FILE_GET_READ_URL,
+  FILE_GET_STATUS,
   FILE_GET_UPLOAD_DATA,
   FILE_SCAN_CLEAR,
   FILE_SCAN_FAILED,
@@ -48,6 +50,12 @@ export class FilesController {
   @EventPattern(FILE_SCAN_INFECTED)
   async onInfected(@Payload() payload: KeyPayload) {
     await this.filesService.onInfected(payload);
+  }
+
+  @MessagePattern(FILE_GET_STATUS)
+  async getFileStatus(@Payload() payload: GetFileStatusPayload) {
+    const result = await this.filesService.getFileStatus(payload);
+    return of(result);
   }
 
   @MessagePattern(FILE_CONFIRM_UPLOAD)

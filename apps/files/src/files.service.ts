@@ -1,6 +1,7 @@
 import {
   createS3Client,
   FileUploadedPayload,
+  GetFileStatusPayload,
   GetUploadDataPayload,
   KeyDto,
   KeyPayload,
@@ -170,8 +171,25 @@ export class FilesService {
     }
   }
 
+  async getFileStatus({ key, userId }: GetFileStatusPayload) {
+    const file = await this.filesRepository.findFile({ key, userId });
+
+    if (!file) {
+      throw new RpcException({
+        message: 'File not found',
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    return { status: file.status };
+  }
+
   async confirmUpload({ key, userId }: FileUploadedPayload) {
-    const file = await this.filesRepository.findPendingFile(key, userId);
+    const file = await this.filesRepository.findFile({
+      key,
+      userId,
+      status: FileStatus.PENDING,
+    });
 
     if (!file) {
       throw new RpcException({

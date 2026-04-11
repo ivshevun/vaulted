@@ -331,7 +331,7 @@ describe('FilesService', () => {
 
     describe('when no PENDING record exists in DB', () => {
       beforeEach(() => {
-        filesRepositoryMock.findPendingFile.mockResolvedValue(null);
+        filesRepositoryMock.findFile.mockResolvedValue(null);
       });
 
       it('should throw an RpcException with NOT_FOUND status', async () => {
@@ -348,7 +348,7 @@ describe('FilesService', () => {
       const s3Error = new Error('NoSuchKey');
 
       beforeEach(() => {
-        filesRepositoryMock.findPendingFile.mockResolvedValue(mockPendingFile);
+        filesRepositoryMock.findFile.mockResolvedValue(mockPendingFile);
         s3Mock.on(HeadObjectCommand).rejects(s3Error);
       });
 
@@ -370,7 +370,7 @@ describe('FilesService', () => {
 
     describe('when PENDING record exists and file is in S3', () => {
       beforeEach(() => {
-        filesRepositoryMock.findPendingFile.mockResolvedValue(mockPendingFile);
+        filesRepositoryMock.findFile.mockResolvedValue(mockPendingFile);
         s3Mock.on(HeadObjectCommand).resolves({});
       });
 
