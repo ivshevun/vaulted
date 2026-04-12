@@ -48,7 +48,7 @@ export class FilesService {
       'Generating upload URL',
     );
 
-    const key = `${userId}/${uuid()}`;
+    const key = uuid();
 
     try {
       const command = new PutObjectCommand({
