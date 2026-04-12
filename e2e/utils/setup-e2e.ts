@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ApiGatewayModule } from '@apps/api-gateway/src/api-gateway.module';
 import { HttpRpcExceptionInterceptor } from '@apps/api-gateway/src/auth/src/interceptors';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { Server } from 'http';
 import {
@@ -20,6 +20,7 @@ export async function setupE2e() {
   }).compile();
 
   const app = moduleFixture.createNestApplication();
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.use(cookieParser());
