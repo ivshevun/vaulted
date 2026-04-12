@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { HttpRpcExceptionInterceptor } from './auth/src/interceptors';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -13,6 +13,7 @@ async function bootstrap() {
   });
   const configService = app.get(ConfigService);
 
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.use(cookieParser());
