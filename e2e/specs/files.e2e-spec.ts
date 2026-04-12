@@ -46,7 +46,7 @@ describe('Files e2e', () => {
     beforeEach(async () => {
       email = `test+${uuid()}@gmail.com`;
       const response = await request(httpServer)
-        .post('/v1/auth/register')
+        .post('/api/v1/auth/register')
         .send({
           email,
           password: '123456',
@@ -65,7 +65,7 @@ describe('Files e2e', () => {
 
       it('should return an upload url with a key if body is valid and access token is provided', async () => {
         const response = await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query(query)
           .set({
             Authorization: `Bearer ${accessToken}`,
@@ -77,7 +77,7 @@ describe('Files e2e', () => {
       });
       it('should return a 403 if no access token provided', async () => {
         await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query(query)
           .expect(403);
       });
@@ -87,7 +87,7 @@ describe('Files e2e', () => {
         };
 
         await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query(invalidQuery)
           .set({
             Authorization: `Bearer ${accessToken}`,
@@ -100,7 +100,7 @@ describe('Files e2e', () => {
         };
 
         await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query(invalidQuery)
           .set({
             Authorization: `Bearer ${accessToken}`,
@@ -114,7 +114,7 @@ describe('Files e2e', () => {
 
       beforeEach(async () => {
         const response = await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query({ filename: 'avatar.png', contentType: 'image/png' })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -125,7 +125,7 @@ describe('Files e2e', () => {
 
       it('should return the key', async () => {
         const response = await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -134,7 +134,7 @@ describe('Files e2e', () => {
 
       it('should return a 201', async () => {
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key })
           .set({ Authorization: `Bearer ${accessToken}` })
           .expect(201);
@@ -142,7 +142,7 @@ describe('Files e2e', () => {
 
       it('should return a 404 if no PENDING record exists in DB', async () => {
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key: 'unknown/key' })
           .set({ Authorization: `Bearer ${accessToken}` })
           .expect(404);
@@ -150,14 +150,14 @@ describe('Files e2e', () => {
 
       it('should set file status to FAILED if file is not in S3', async () => {
         const uploadResponse = await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query({ filename: 'missing.png', contentType: 'image/png' })
           .set({ Authorization: `Bearer ${accessToken}` });
 
         const missingKey = (uploadResponse.body as { key: string }).key;
 
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key: missingKey })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -184,7 +184,7 @@ describe('Files e2e', () => {
 
       it('should set file status to CLEAN after a successful scan', async () => {
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -199,7 +199,7 @@ describe('Files e2e', () => {
 
       it('should delete infected file from DB and S3', async () => {
         const uploadResponse = await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query({ filename: 'eicar.txt', contentType: 'text/plain' })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -208,7 +208,7 @@ describe('Files e2e', () => {
         await uploadFileToS3(configService, infectedKey, true);
 
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key: infectedKey })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -239,21 +239,21 @@ describe('Files e2e', () => {
 
       it('should return a 403 if no access token provided', async () => {
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key })
           .expect(403);
       });
 
       it('should return a 400 if no body provided', async () => {
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .set({ Authorization: `Bearer ${accessToken}` })
           .expect(400);
       });
 
       it('should return a 400 if no key provided', async () => {
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({})
           .set({ Authorization: `Bearer ${accessToken}` })
           .expect(400);
@@ -265,7 +265,7 @@ describe('Files e2e', () => {
 
       beforeEach(async () => {
         const uploadResponse = await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query({ filename: 'avatar.png', contentType: 'image/png' })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -274,7 +274,7 @@ describe('Files e2e', () => {
         await uploadFileToS3(configService, key);
 
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key })
           .set({ Authorization: `Bearer ${accessToken}` });
       });
@@ -282,7 +282,7 @@ describe('Files e2e', () => {
       it('should eventually return CLEAN status after a successful scan', async () => {
         await poll(async () => {
           const response = await request(httpServer)
-            .get('/v1/files/status')
+            .get('/api/v1/files/status')
             .query({ key })
             .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -292,7 +292,7 @@ describe('Files e2e', () => {
         });
 
         const response = await request(httpServer)
-          .get('/v1/files/status')
+          .get('/api/v1/files/status')
           .query({ key })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -303,7 +303,7 @@ describe('Files e2e', () => {
 
       it('should return a 404 for an unknown key', async () => {
         await request(httpServer)
-          .get('/v1/files/status')
+          .get('/api/v1/files/status')
           .query({ key: 'unknown/key' })
           .set({ Authorization: `Bearer ${accessToken}` })
           .expect(404);
@@ -311,7 +311,7 @@ describe('Files e2e', () => {
 
       it('should return a 403 if no access token provided', async () => {
         await request(httpServer)
-          .get('/v1/files/status')
+          .get('/api/v1/files/status')
           .query({ key })
           .expect(403);
       });
@@ -319,14 +319,14 @@ describe('Files e2e', () => {
       it('should return a 404 for a key belonging to another user', async () => {
         const otherEmail = `test+${uuid()}@gmail.com`;
         const otherResponse = await request(httpServer)
-          .post('/v1/auth/register')
+          .post('/api/v1/auth/register')
           .send({ email: otherEmail, password: '123456', name: 'Other User' });
 
         const otherToken = (otherResponse.body as { accessToken: string })
           .accessToken;
 
         await request(httpServer)
-          .get('/v1/files/status')
+          .get('/api/v1/files/status')
           .query({ key })
           .set({ Authorization: `Bearer ${otherToken}` })
           .expect(404);
@@ -338,7 +338,7 @@ describe('Files e2e', () => {
 
       beforeEach(async () => {
         const uploadResponse = await request(httpServer)
-          .get('/v1/files/upload-data')
+          .get('/api/v1/files/upload-data')
           .query({ filename: 'avatar.png', contentType: 'image/png' })
           .set({ Authorization: `Bearer ${accessToken}` });
 
@@ -347,14 +347,14 @@ describe('Files e2e', () => {
         await uploadFileToS3(configService, fileKey);
 
         await request(httpServer)
-          .post('/v1/files/confirm-upload')
+          .post('/api/v1/files/confirm-upload')
           .send({ key: fileKey })
           .set({ Authorization: `Bearer ${accessToken}` });
       });
 
       it('should return a url if key is valid', async () => {
         const response = await request(httpServer)
-          .get('/v1/files/read-url')
+          .get('/api/v1/files/read-url')
           .set({ Authorization: `Bearer ${accessToken}` })
           .query({ key: fileKey });
 
@@ -364,20 +364,20 @@ describe('Files e2e', () => {
       });
       it('should return a 404 if file does not exist', async () => {
         await request(httpServer)
-          .get('/v1/files/read-url')
+          .get('/api/v1/files/read-url')
           .set({ Authorization: `Bearer ${accessToken}` })
           .query({ key: 'file-key' })
           .expect(404);
       });
       it('should return a 403 if no access token provided', async () => {
         await request(httpServer)
-          .get('/v1/files/read-url')
+          .get('/api/v1/files/read-url')
           .query({ key: fileKey })
           .expect(403);
       });
       it('should return a 400 if no query provided', async () => {
         await request(httpServer)
-          .get('/v1/files/read-url')
+          .get('/api/v1/files/read-url')
           .set({ Authorization: `Bearer ${accessToken}` })
           .expect(400);
       });
