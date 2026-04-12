@@ -20,6 +20,7 @@ export async function setupE2e() {
   }).compile();
 
   const app = moduleFixture.createNestApplication();
+  app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
