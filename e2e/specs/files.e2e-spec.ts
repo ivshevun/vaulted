@@ -169,17 +169,21 @@ describe('Files e2e', () => {
       });
 
       it('should set file status to FAILED when max retries are exhausted', async () => {
-        const userId = key.split('/')[0];
+        const file = await prisma.file.findUnique({ where: { key } });
 
-        await publishAntivirusMessage(configService, { key, userId }, 5);
+        await publishAntivirusMessage(
+          configService,
+          { key, userId: file!.userId },
+          5,
+        );
 
         await poll(async () => {
-          const file = await prisma.file.findUnique({ where: { key } });
-          return file?.status === FileStatus.FAILED;
+          const polledFile = await prisma.file.findUnique({ where: { key } });
+          return polledFile?.status === FileStatus.FAILED;
         });
 
-        const file = await prisma.file.findUnique({ where: { key } });
-        expect(file?.status).toBe(FileStatus.FAILED);
+        const updatedFile = await prisma.file.findUnique({ where: { key } });
+        expect(updatedFile?.status).toBe(FileStatus.FAILED);
       });
 
       it('should set file status to CLEAN after a successful scan', async () => {

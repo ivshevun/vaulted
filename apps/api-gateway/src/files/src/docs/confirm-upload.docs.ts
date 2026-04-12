@@ -16,7 +16,7 @@ export function ConfirmUploadDocs() {
           example: {
             example: {
               id: '423f378a-dafe-4810-b96b-c742cd732de5',
-              key: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed/avatar.png-8bac9ec1-992e-4512-b266-bd4f5ee07620',
+              key: '8bac9ec1-992e-4512-b266-bd4f5ee07620',
               filename: 'avatar.png',
               contentType: 'image/png',
               size: 123,
