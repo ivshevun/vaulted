@@ -13,7 +13,7 @@ async function bootstrap() {
   });
   const configService = app.get(ConfigService);
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', { exclude: ['health'] });
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalInterceptors(new HttpRpcExceptionInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
