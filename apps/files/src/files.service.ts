@@ -18,7 +18,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { v4 as uuid } from 'uuid';
-import { getFileSize } from './utils';
+import { generateSlug, getFileSize } from './utils';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
 import { FileStatus } from '@prisma/files-client';
@@ -49,6 +49,7 @@ export class FilesService {
     );
 
     const key = uuid();
+    const slug = generateSlug(filename);
 
     try {
       const command = new PutObjectCommand({
@@ -63,6 +64,7 @@ export class FilesService {
 
       await this.filesRepository.createFile({
         key,
+        slug,
         filename,
         contentType,
         userId,
