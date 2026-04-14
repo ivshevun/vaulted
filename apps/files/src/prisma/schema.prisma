@@ -26,7 +26,8 @@ model File {
   contentType String
   size        Int?
 
-  status FileStatus @default(PENDING)
+  status  FileStatus @default(PENDING)
+  scanned Boolean    @default(false)
 
   userId String
 
