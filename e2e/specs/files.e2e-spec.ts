@@ -75,6 +75,18 @@ describe('Files e2e', () => {
         expect(body.url).toBeDefined();
         expect(body.key).toBeDefined();
       });
+      it('should store a slug in the database matching the filename', async () => {
+        const response = await request(httpServer)
+          .get('/api/v1/files/upload-data')
+          .query(query)
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        const { key } = response.body as { key: string };
+        const file = await prisma.file.findUnique({ where: { key } });
+
+        expect(file?.slug).toMatch(/^avatar-[a-z0-9]{12}\.png$/);
+      });
+
       it('should return a 403 if no access token provided', async () => {
         await request(httpServer)
           .get('/api/v1/files/upload-data')
