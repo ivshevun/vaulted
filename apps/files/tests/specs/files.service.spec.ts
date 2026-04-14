@@ -190,6 +190,7 @@ describe('FilesService', () => {
     const mockFileRecord: File = {
       id: 'file-id',
       key: payload.key,
+      slug: 'avatar-abc123def456.png',
       filename: 'avatar.png',
       contentType: 'image/png',
       userId: payload.userId,
@@ -320,6 +321,7 @@ describe('FilesService', () => {
     const mockPendingFile: File = {
       id: 'file-id',
       key: payload.key,
+      slug: 'avatar-abc123def456.png',
       filename: 'avatar.png',
       contentType: 'image/png',
       userId: payload.userId,
