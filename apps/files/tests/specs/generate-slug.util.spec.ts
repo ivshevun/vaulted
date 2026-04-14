@@ -1,4 +1,4 @@
-import { generateSlug } from '../../src/utils/generate-slug.util';
+import { generateSlug } from '@apps/files/src/utils';
 
 describe('generateSlug', () => {
   const SLUG_PATTERN = /^[a-z0-9-]+-[a-z0-9]{12}(\.[a-z0-9]+)?$/;
