@@ -185,7 +185,7 @@ describe('Files e2e', () => {
 
         await publishAntivirusMessage(
           configService,
-          { key, userId: file!.userId },
+          { key, userId: file!.userId, fileSize: file!.size ?? 1024 },
           5,
         );
 
