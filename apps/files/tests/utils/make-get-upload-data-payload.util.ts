@@ -7,6 +7,7 @@ export const makeGetUploadDataPayload = (
     userId: 'ee3030fe-503b-474c-aa3e-3837aeb6e0ed',
     filename: 'text.txt',
     contentType: 'text/plain',
+    fileSize: 1024,
     ...overrides,
   };
 };

@@ -196,6 +196,7 @@ describe('FilesService', () => {
       userId: payload.userId,
       size: fileSize,
       status: FileStatus.CLEAN,
+      scanned: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -327,6 +328,7 @@ describe('FilesService', () => {
       userId: payload.userId,
       size: null,
       status: FileStatus.PENDING,
+      scanned: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
