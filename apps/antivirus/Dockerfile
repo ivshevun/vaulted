@@ -7,7 +7,6 @@ COPY pnpm-lock.yaml .
 COPY tsconfig.json tsconfig.json
 COPY nest-cli.json nest-cli.json
 
-COPY .env.test .env.test
 COPY apps/antivirus apps/antivirus
 COPY libs libs
 
