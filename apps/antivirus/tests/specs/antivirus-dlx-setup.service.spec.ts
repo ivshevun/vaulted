@@ -10,6 +10,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LoggerModule } from 'nestjs-pino';
 import amqplib from 'amqplib';
 import { AntivirusDlxSetupService } from '@apps/antivirus/src/antivirus-dlx-setup.service';
+import { testEnv } from '@app/common-tests';
 
 jest.mock('amqplib', () => ({ connect: jest.fn() }));
 
@@ -35,7 +36,11 @@ describe('AntivirusDlxSetupService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        await ConfigModule.forRoot({ isGlobal: true }),
+        await ConfigModule.forRoot({
+          isGlobal: true,
+          ignoreEnvFile: true,
+          load: [() => testEnv],
+        }),
         LoggerModule.forRoot(pinoConfig),
       ],
       providers: [AntivirusDlxSetupService],

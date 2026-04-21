@@ -1,4 +1,5 @@
 import { pinoConfig } from '@app/common';
+import { testEnv } from '@app/common-tests';
 import {
   DeleteObjectCommand,
   HeadObjectCommand,
@@ -42,7 +43,11 @@ describe('FilesService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        await ConfigModule.forRoot({ isGlobal: true }),
+        await ConfigModule.forRoot({
+          isGlobal: true,
+          ignoreEnvFile: true,
+          load: [() => testEnv],
+        }),
         LoggerModule.forRoot(pinoConfig),
       ],
       providers: [

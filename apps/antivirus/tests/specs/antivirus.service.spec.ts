@@ -1,4 +1,5 @@
 import { pinoConfig } from '@app/common';
+import { testEnv } from '@app/common-tests';
 import { GetObjectCommand, NoSuchKey, S3Client } from '@aws-sdk/client-s3';
 import { ConfigModule } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
@@ -45,7 +46,11 @@ describe('AntivirusService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        await ConfigModule.forRoot({ isGlobal: true }),
+        await ConfigModule.forRoot({
+          isGlobal: true,
+          ignoreEnvFile: true,
+          load: [() => testEnv],
+        }),
         LoggerModule.forRoot(pinoConfig),
       ],
       providers: [
