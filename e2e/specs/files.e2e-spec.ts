@@ -14,6 +14,10 @@ import {
 import { v4 as uuid } from 'uuid';
 import { PrismaService as FilesPrismaService } from '@apps/files/src/prisma';
 import { FileStatus } from '@prisma/files-client';
+import {
+  MAX_FILE_SIZE_BYTES,
+  MAX_SCANNABLE_FILE_SIZE_BYTES,
+} from '@app/common/constants';
 
 describe('Files e2e', () => {
   let app: INestApplication;
@@ -61,6 +65,7 @@ describe('Files e2e', () => {
       const query: GetUploadDataDto = {
         filename: 'avatar.png',
         contentType: 'image/png',
+        fileSize: 1024,
       };
 
       it('should return an upload url with a key if body is valid and access token is provided', async () => {
@@ -119,6 +124,14 @@ describe('Files e2e', () => {
           })
           .expect(400);
       });
+
+      it('should return a 400 if fileSize exceeds 100GB', async () => {
+        await request(httpServer)
+          .get('/api/v1/files/upload-data')
+          .query({ ...query, fileSize: MAX_FILE_SIZE_BYTES + 1 })
+          .set({ Authorization: `Bearer ${accessToken}` })
+          .expect(400);
+      });
     });
 
     describe('confirm-upload', () => {
@@ -127,7 +140,11 @@ describe('Files e2e', () => {
       beforeEach(async () => {
         const response = await request(httpServer)
           .get('/api/v1/files/upload-data')
-          .query({ filename: 'avatar.png', contentType: 'image/png' })
+          .query({
+            filename: 'avatar.png',
+            contentType: 'image/png',
+            fileSize: 1024,
+          })
           .set({ Authorization: `Bearer ${accessToken}` });
 
         key = (response.body as { key: string }).key;
@@ -163,7 +180,11 @@ describe('Files e2e', () => {
       it('should set file status to FAILED if file is not in S3', async () => {
         const uploadResponse = await request(httpServer)
           .get('/api/v1/files/upload-data')
-          .query({ filename: 'missing.png', contentType: 'image/png' })
+          .query({
+            filename: 'missing.png',
+            contentType: 'image/png',
+            fileSize: 1024,
+          })
           .set({ Authorization: `Bearer ${accessToken}` });
 
         const missingKey = (uploadResponse.body as { key: string }).key;
@@ -198,7 +219,7 @@ describe('Files e2e', () => {
         expect(updatedFile?.status).toBe(FileStatus.FAILED);
       });
 
-      it('should set file status to CLEAN after a successful scan', async () => {
+      it('should set file status to CLEAN with scanned=true after a successful scan', async () => {
         await request(httpServer)
           .post('/api/v1/files/confirm-upload')
           .send({ key })
@@ -211,12 +232,48 @@ describe('Files e2e', () => {
 
         const file = await prisma.file.findUnique({ where: { key } });
         expect(file?.status).toBe(FileStatus.CLEAN);
+        expect(file?.scanned).toBe(true);
+      });
+
+      it('should set file status to CLEAN with scanned=false when file exceeds 100MB', async () => {
+        const uploadResponse = await request(httpServer)
+          .get('/api/v1/files/upload-data')
+          .query({
+            filename: 'large.bin',
+            contentType: 'application/octet-stream',
+            fileSize: MAX_SCANNABLE_FILE_SIZE_BYTES + 1,
+          })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        const largeKey = (uploadResponse.body as { key: string }).key;
+
+        await uploadFileToS3(configService, largeKey);
+
+        await request(httpServer)
+          .post('/api/v1/files/confirm-upload')
+          .send({ key: largeKey })
+          .set({ Authorization: `Bearer ${accessToken}` });
+
+        await poll(async () => {
+          const file = await prisma.file.findUnique({
+            where: { key: largeKey },
+          });
+          return file?.status === FileStatus.CLEAN;
+        });
+
+        const file = await prisma.file.findUnique({ where: { key: largeKey } });
+        expect(file?.status).toBe(FileStatus.CLEAN);
+        expect(file?.scanned).toBe(false);
       });
 
       it('should delete infected file from DB and S3', async () => {
         const uploadResponse = await request(httpServer)
           .get('/api/v1/files/upload-data')
-          .query({ filename: 'eicar.txt', contentType: 'text/plain' })
+          .query({
+            filename: 'eicar.txt',
+            contentType: 'text/plain',
+            fileSize: 1024,
+          })
           .set({ Authorization: `Bearer ${accessToken}` });
 
         const infectedKey = (uploadResponse.body as { key: string }).key;
@@ -282,7 +339,11 @@ describe('Files e2e', () => {
       beforeEach(async () => {
         const uploadResponse = await request(httpServer)
           .get('/api/v1/files/upload-data')
-          .query({ filename: 'avatar.png', contentType: 'image/png' })
+          .query({
+            filename: 'avatar.png',
+            contentType: 'image/png',
+            fileSize: 1024,
+          })
           .set({ Authorization: `Bearer ${accessToken}` });
 
         key = (uploadResponse.body as KeyDto).key;
@@ -355,7 +416,11 @@ describe('Files e2e', () => {
       beforeEach(async () => {
         const uploadResponse = await request(httpServer)
           .get('/api/v1/files/upload-data')
-          .query({ filename: 'avatar.png', contentType: 'image/png' })
+          .query({
+            filename: 'avatar.png',
+            contentType: 'image/png',
+            fileSize: 1024,
+          })
           .set({ Authorization: `Bearer ${accessToken}` });
 
         fileKey = (uploadResponse.body as { key: string }).key;
