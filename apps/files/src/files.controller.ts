@@ -16,6 +16,7 @@ import {
   FILE_SCAN_CLEAR,
   FILE_SCAN_FAILED,
   FILE_SCAN_INFECTED,
+  FILE_SCAN_SKIPPED,
   FILE_SCAN_STARTED,
 } from '@app/common/constants';
 
@@ -68,5 +69,10 @@ export class FilesController {
   @EventPattern(FILE_SCAN_CLEAR)
   async onClearFile(@Payload() payload: KeyPayload) {
     await this.filesService.onClearFile(payload);
+  }
+
+  @EventPattern(FILE_SCAN_SKIPPED)
+  async onScanSkipped(@Payload() payload: KeyPayload) {
+    await this.filesService.onScanSkipped(payload);
   }
 }
