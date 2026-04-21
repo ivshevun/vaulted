@@ -32,7 +32,7 @@ export class AntivirusService {
     { key, fileSize }: FileUploadedPayload,
     retryCount = 0,
   ): Promise<void> {
-    if (fileSize > MAX_SCANNABLE_FILE_SIZE_BYTES) {
+    if (fileSize && fileSize > MAX_SCANNABLE_FILE_SIZE_BYTES) {
       this.logger.info({ key, fileSize }, 'File too large to scan, skipping');
       this.eventBus.emit(FILE_SCAN_SKIPPED, { key });
       return;

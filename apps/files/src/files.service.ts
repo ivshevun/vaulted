@@ -226,7 +226,11 @@ export class FilesService {
       throw err;
     }
 
-    this.eventBus.emit(FILE_UPLOADED, { key, userId, fileSize: file.size });
+    this.eventBus.emit(FILE_UPLOADED, {
+      key,
+      userId,
+      fileSize: file.size ?? undefined,
+    });
 
     return { key };
   }
