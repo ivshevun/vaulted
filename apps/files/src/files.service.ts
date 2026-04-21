@@ -18,7 +18,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { v4 as uuid } from 'uuid';
-import { generateSlug, getFileSize } from './utils';
+import { generateSlug } from './utils';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { FILE_UPLOADED, RMQ_EXCHANGE } from '@app/common/constants';
 import { FileStatus } from '@prisma/files-client';
@@ -42,7 +42,12 @@ export class FilesService {
     this.bucketName = configService.get<string>('AWS_S3_BUCKET_NAME')!;
   }
 
-  async getUploadData({ filename, contentType, userId }: GetUploadDataPayload) {
+  async getUploadData({
+    filename,
+    contentType,
+    userId,
+    fileSize,
+  }: GetUploadDataPayload) {
     this.logger.info(
       { userId, filename, contentType },
       'Generating upload URL',
@@ -56,6 +61,7 @@ export class FilesService {
         Bucket: this.bucketName,
         Key: key,
         ContentType: contentType,
+        ContentLength: fileSize,
       });
 
       const url = await getSignedUrl(this.s3Presigner, command, {
@@ -68,6 +74,7 @@ export class FilesService {
         filename,
         contentType,
         userId,
+        size: fileSize,
       });
 
       this.logger.info({ key, userId }, 'Upload URL generated');
@@ -158,16 +165,25 @@ export class FilesService {
 
   async onClearFile({ key }: KeyPayload) {
     try {
-      const size = await getFileSize(this.s3, this.bucketName, key);
-
-      this.logger.info({ key, size }, 'Marking file as clean');
-
       return await this.filesRepository.updateFile(key, {
         status: FileStatus.CLEAN,
-        size,
+        scanned: true,
       });
     } catch (err: unknown) {
       this.logger.error({ key, err }, 'Failed to mark file as clean');
+
+      throw err;
+    }
+  }
+
+  async onScanSkipped({ key }: KeyPayload) {
+    try {
+      return await this.filesRepository.updateFile(key, {
+        status: FileStatus.CLEAN,
+        scanned: false,
+      });
+    } catch (err: unknown) {
+      this.logger.error({ key, err }, 'Failed to mark scan as skipped');
 
       throw err;
     }
@@ -210,7 +226,7 @@ export class FilesService {
       throw err;
     }
 
-    this.eventBus.emit(FILE_UPLOADED, { key, userId });
+    this.eventBus.emit(FILE_UPLOADED, { key, userId, fileSize: file.size });
 
     return { key };
   }

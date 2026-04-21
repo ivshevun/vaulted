@@ -85,6 +85,28 @@ describe('FilesService', () => {
           expect.anything(),
         );
       });
+
+      it('should pass ContentLength to PutObjectCommand', async () => {
+        await service.getUploadData(payload);
+
+        expect(getSignedUrl).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            input: expect.objectContaining({
+              ContentLength: payload.fileSize,
+            }) as unknown,
+          }),
+          expect.anything(),
+        );
+      });
+
+      it('should store fileSize in DB on creation', async () => {
+        await service.getUploadData(payload);
+
+        expect(filesRepositoryMock.createFile).toHaveBeenCalledWith(
+          expect.objectContaining({ size: payload.fileSize }),
+        );
+      });
     });
 
     describe('when presigner fails', () => {
@@ -186,7 +208,6 @@ describe('FilesService', () => {
 
   describe('onClearFile', () => {
     const payload = makeFileUploadedPayload();
-    const fileSize = 2048;
     const mockFileRecord: File = {
       id: 'file-id',
       key: payload.key,
@@ -194,26 +215,31 @@ describe('FilesService', () => {
       filename: 'avatar.png',
       contentType: 'image/png',
       userId: payload.userId,
-      size: fileSize,
+      size: 1024,
       status: FileStatus.CLEAN,
       scanned: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    describe('when S3 and database succeed', () => {
+    describe('when database succeeds', () => {
       beforeEach(() => {
-        s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
         filesRepositoryMock.updateFile.mockResolvedValue(mockFileRecord);
       });
 
-      it('should update the file record with size from S3 and CLEAN status', async () => {
+      it('should update the file record with CLEAN status and scanned=true', async () => {
         await service.onClearFile(payload);
 
         expect(filesRepositoryMock.updateFile).toHaveBeenCalledWith(
           payload.key,
-          { status: FileStatus.CLEAN, size: fileSize },
+          { status: FileStatus.CLEAN, scanned: true },
         );
+      });
+
+      it('should not call S3 for file size', async () => {
+        await service.onClearFile(payload);
+
+        expect(s3Mock).not.toHaveReceivedCommand(HeadObjectCommand);
       });
 
       it('should return the updated file record', async () => {
@@ -223,29 +249,10 @@ describe('FilesService', () => {
       });
     });
 
-    describe('when S3 HeadObject fails', () => {
-      const s3Error = new Error('S3 unavailable');
-
-      beforeEach(() => {
-        s3Mock.on(HeadObjectCommand).rejects(s3Error);
-      });
-
-      it('should rethrow the error', async () => {
-        await expect(service.onClearFile(payload)).rejects.toThrow(s3Error);
-      });
-
-      it('should not save anything to the database', async () => {
-        await service.onClearFile(payload).catch(() => {});
-
-        expect(filesRepositoryMock.updateFile).not.toHaveBeenCalled();
-      });
-    });
-
     describe('when database update fails', () => {
       const dbError = new Error('DB connection lost');
 
       beforeEach(() => {
-        s3Mock.on(HeadObjectCommand).resolves({ ContentLength: fileSize });
         filesRepositoryMock.updateFile.mockRejectedValue(dbError);
       });
 
@@ -317,6 +324,37 @@ describe('FilesService', () => {
     });
   });
 
+  describe('onScanSkipped', () => {
+    const payload: KeyPayload = { key: 'user-id/file-uuid' };
+
+    describe('when database update succeeds', () => {
+      beforeEach(() => {
+        filesRepositoryMock.updateFile.mockResolvedValue({} as File);
+      });
+
+      it('should update the file status to CLEAN with scanned=false', async () => {
+        await service.onScanSkipped(payload);
+
+        expect(filesRepositoryMock.updateFile).toHaveBeenCalledWith(
+          payload.key,
+          { status: FileStatus.CLEAN, scanned: false },
+        );
+      });
+    });
+
+    describe('when database update fails', () => {
+      const dbError = new Error('DB connection lost');
+
+      beforeEach(() => {
+        filesRepositoryMock.updateFile.mockRejectedValue(dbError);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.onScanSkipped(payload)).rejects.toThrow(dbError);
+      });
+    });
+  });
+
   describe('confirmUpload', () => {
     const payload = makeFileUploadedPayload();
     const mockPendingFile: File = {
@@ -326,7 +364,7 @@ describe('FilesService', () => {
       filename: 'avatar.png',
       contentType: 'image/png',
       userId: payload.userId,
-      size: null,
+      size: payload.fileSize,
       status: FileStatus.PENDING,
       scanned: false,
       createdAt: new Date(),
@@ -378,12 +416,13 @@ describe('FilesService', () => {
         s3Mock.on(HeadObjectCommand).resolves({});
       });
 
-      it('should emit file.uploaded with key and userId', async () => {
+      it('should emit file.uploaded with key, userId and fileSize', async () => {
         await service.confirmUpload(payload);
 
         expect(eventBusMock.emit).toHaveBeenCalledWith(FILE_UPLOADED, {
           key: payload.key,
           userId: payload.userId,
+          fileSize: mockPendingFile.size,
         });
       });
 

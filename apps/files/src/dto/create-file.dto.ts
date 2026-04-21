@@ -4,4 +4,5 @@ export interface CreateFileDto {
   filename: string;
   contentType: string;
   userId: string;
+  size: number;
 }
