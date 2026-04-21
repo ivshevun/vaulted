@@ -10,7 +10,9 @@ import {
   FILE_SCAN_CLEAR,
   FILE_SCAN_FAILED,
   FILE_SCAN_INFECTED,
+  FILE_SCAN_SKIPPED,
   FILE_SCAN_STARTED,
+  MAX_SCANNABLE_FILE_SIZE_BYTES,
   RMQ_EXCHANGE,
 } from '@app/common/constants';
 import { ClientProxy } from '@nestjs/microservices';
@@ -26,7 +28,16 @@ export class AntivirusService {
     this.logger.setContext(AntivirusService.name);
   }
 
-  async scan({ key }: FileUploadedPayload, retryCount = 0): Promise<void> {
+  async scan(
+    { key, fileSize }: FileUploadedPayload,
+    retryCount = 0,
+  ): Promise<void> {
+    if (fileSize > MAX_SCANNABLE_FILE_SIZE_BYTES) {
+      this.logger.info({ key, fileSize }, 'File too large to scan, skipping');
+      this.eventBus.emit(FILE_SCAN_SKIPPED, { key });
+      return;
+    }
+
     if (retryCount >= ANTIVIRUS_MAX_RETRIES) {
       this.logger.warn(
         { key, retryCount },

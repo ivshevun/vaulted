@@ -13,7 +13,9 @@ import {
   FILE_SCAN_CLEAR,
   FILE_SCAN_FAILED,
   FILE_SCAN_INFECTED,
+  FILE_SCAN_SKIPPED,
   FILE_SCAN_STARTED,
+  MAX_SCANNABLE_FILE_SIZE_BYTES,
   RMQ_EXCHANGE,
 } from '@app/common/constants';
 import { Readable } from 'stream';
@@ -63,6 +65,47 @@ describe('AntivirusService', () => {
   });
 
   describe('scan', () => {
+    describe('when fileSize exceeds MAX_SCANNABLE_FILE_SIZE_BYTES', () => {
+      it('should emit FILE_SCAN_SKIPPED and not scan', async () => {
+        const payload = makeFileUploadedPayload({
+          fileSize: MAX_SCANNABLE_FILE_SIZE_BYTES + 1,
+        });
+
+        await service.scan(payload);
+
+        expect(filesProxyMock.emit).toHaveBeenCalledWith(FILE_SCAN_SKIPPED, {
+          key: payload.key,
+        });
+        expect(mockScanStream).not.toHaveBeenCalled();
+      });
+
+      it('should not fetch file from S3', async () => {
+        const payload = makeFileUploadedPayload({
+          fileSize: MAX_SCANNABLE_FILE_SIZE_BYTES + 1,
+        });
+
+        await service.scan(payload);
+
+        expect(s3Mock).not.toHaveReceivedCommand(GetObjectCommand);
+      });
+    });
+
+    describe('when fileSize is within MAX_SCANNABLE_FILE_SIZE_BYTES', () => {
+      beforeEach(() => {
+        mockScanStream.mockResolvedValue({ isInfected: false });
+      });
+
+      it('should proceed with scan', async () => {
+        const payload = makeFileUploadedPayload({
+          fileSize: MAX_SCANNABLE_FILE_SIZE_BYTES,
+        });
+
+        await service.scan(payload);
+
+        expect(mockScanStream).toHaveBeenCalled();
+      });
+    });
+
     describe('when max retries are exhausted', () => {
       it('should emit FILE_SCAN_FAILED and not scan', async () => {
         const payload = makeFileUploadedPayload();
