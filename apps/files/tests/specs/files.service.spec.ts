@@ -2,6 +2,7 @@ import { pinoConfig } from '@app/common';
 import {
   DeleteObjectCommand,
   HeadObjectCommand,
+  NotFound,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -364,7 +365,7 @@ describe('FilesService', () => {
       filename: 'avatar.png',
       contentType: 'image/png',
       userId: payload.userId,
-      size: payload.fileSize,
+      size: payload.fileSize ?? null,
       status: FileStatus.PENDING,
       scanned: false,
       createdAt: new Date(),
@@ -386,12 +387,12 @@ describe('FilesService', () => {
       });
     });
 
-    describe('when PENDING record exists but HeadObject fails', () => {
-      const s3Error = new Error('NoSuchKey');
-
+    describe('when PENDING record exists but file is not in S3 (NotFound)', () => {
       beforeEach(() => {
         filesRepositoryMock.findFile.mockResolvedValue(mockPendingFile);
-        s3Mock.on(HeadObjectCommand).rejects(s3Error);
+        s3Mock
+          .on(HeadObjectCommand)
+          .rejects(new NotFound({ message: 'NotFound', $metadata: {} }));
       });
 
       it('should update file status to FAILED', async () => {
@@ -403,10 +404,40 @@ describe('FilesService', () => {
         );
       });
 
+      it('should throw an RpcException with BAD_REQUEST status', async () => {
+        await expect(service.confirmUpload(payload)).rejects.toMatchObject(
+          new RpcException({
+            message: 'File not uploaded to S3',
+            status: HttpStatus.BAD_REQUEST,
+          }),
+        );
+      });
+
       it('should not emit file.uploaded', async () => {
         await service.confirmUpload(payload).catch(() => {});
 
         expect(eventBusMock.emit).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when PENDING record exists but HeadObject throws unknown error', () => {
+      const unknownError = new Error('S3 unavailable');
+
+      beforeEach(() => {
+        filesRepositoryMock.findFile.mockResolvedValue(mockPendingFile);
+        s3Mock.on(HeadObjectCommand).rejects(unknownError);
+      });
+
+      it('should rethrow the error', async () => {
+        await expect(service.confirmUpload(payload)).rejects.toThrow(
+          unknownError,
+        );
+      });
+
+      it('should not update file status', async () => {
+        await service.confirmUpload(payload).catch(() => {});
+
+        expect(filesRepositoryMock.updateFile).not.toHaveBeenCalled();
       });
     });
 

@@ -10,6 +10,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  NotFound,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -221,7 +222,16 @@ export class FilesService {
         new HeadObjectCommand({ Bucket: this.bucketName, Key: key }),
       );
     } catch (err: unknown) {
-      await this.filesRepository.updateFile(key, { status: FileStatus.FAILED });
+      if (err instanceof NotFound) {
+        await this.filesRepository.updateFile(key, {
+          status: FileStatus.FAILED,
+        });
+
+        throw new RpcException({
+          message: 'File not uploaded to S3',
+          status: HttpStatus.BAD_REQUEST,
+        });
+      }
 
       throw err;
     }
