@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsMimeType, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsMimeType,
+  IsNotEmpty,
+  IsString,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
+import { MAX_FILE_SIZE_BYTES } from '@app/common/constants';
 
 export class GetUploadDataDto {
   @ApiProperty()
@@ -10,4 +18,10 @@ export class GetUploadDataDto {
   @ApiProperty()
   @IsMimeType()
   contentType: string;
+
+  @ApiProperty()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_FILE_SIZE_BYTES)
+  fileSize: number;
 }
