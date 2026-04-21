@@ -39,6 +39,10 @@ services:
     build:
       context: .
       dockerfile: ./apps/api-gateway/Dockerfile
+      cache_from:
+        - type=gha,scope=api-gateway
+      cache_to:
+        - type=gha,scope=api-gateway,mode=max
     env_file:
       - apps/api-gateway/.env.test
     ports:
@@ -76,6 +80,10 @@ services:
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
+      cache_from:
+        - type=gha,scope=auth
+      cache_to:
+        - type=gha,scope=auth,mode=max
     env_file:
       - apps/auth/.env.test
     ports:
@@ -101,6 +109,10 @@ services:
     build:
       context: .
       dockerfile: ./apps/files/Dockerfile
+      cache_from:
+        - type=gha,scope=files
+      cache_to:
+        - type=gha,scope=files,mode=max
     env_file:
       - apps/files/.env.test
     ports:
@@ -128,6 +140,10 @@ services:
     build:
       context: .
       dockerfile: ./apps/antivirus/Dockerfile
+      cache_from:
+        - type=gha,scope=antivirus
+      cache_to:
+        - type=gha,scope=antivirus,mode=max
     env_file:
       - apps/antivirus/.env.test
     ports:

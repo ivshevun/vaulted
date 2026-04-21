@@ -7,22 +7,91 @@ on:
     branches: [main]
 
 jobs:
-  ci:
+  quality:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v2
         with:
           version: 10
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        run: |
+          pnpm prisma generate --schema=apps/files/src/prisma/schema.prisma
+          pnpm prisma generate --schema=apps/auth/src/prisma/schema.prisma
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        run: |
+          pnpm prisma generate --schema=apps/files/src/prisma/schema.prisma
+          pnpm prisma generate --schema=apps/auth/src/prisma/schema.prisma
+
+      - name: Run unit tests
+        run: pnpm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        run: |
+          pnpm prisma generate --schema=apps/files/src/prisma/schema.prisma
+          pnpm prisma generate --schema=apps/auth/src/prisma/schema.prisma
+
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [quality, unit-tests, build]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: docker/setup-buildx-action@v3
 
       - name: Write .env files from secrets
         run: |
@@ -44,30 +113,10 @@ jobs:
           echo "${{ secrets.ENV_TEST }}" > .env.test
           echo "${{ secrets.ENV_TEST }}" > .env
 
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Clients
-        run: |
-          pnpm prisma generate --schema=apps/files/src/prisma/schema.prisma
-          pnpm prisma generate --schema=apps/auth/src/prisma/schema.prisma
-
-      - name: Build app
-        run: pnpm build
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Run unit tests
-        run: pnpm test
-
       - name: Run docker compose
         run: docker compose -f docker-compose.e2e.yaml up --build -d --wait
 
-      - name: Run migrations inside docker compose
+      - name: Run migrations
         run: |
           docker exec vaulted-api-gateway-test sh -c "set -a && source apps/files/.env.test && pnpm prisma db push --schema=apps/files/src/prisma/schema.prisma"
           docker exec vaulted-api-gateway-test sh -c "set -a && source apps/auth/.env.test && pnpm prisma db push --schema=apps/auth/src/prisma/schema.prisma"
@@ -79,8 +128,24 @@ jobs:
         if: failure()
         run: docker compose logs
 
-      - name: Fetch main branch
-        run: git fetch origin main
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
 
       - name: Check commit messages
         run: pnpm commitlint --from=origin/main --to=HEAD
