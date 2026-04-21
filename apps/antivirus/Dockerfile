@@ -11,7 +11,7 @@ COPY apps/antivirus apps/antivirus
 COPY libs libs
 
 
-RUN npm install -g pnpm
+RUN corepack enable
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build antivirus
 

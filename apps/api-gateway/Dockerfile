@@ -14,7 +14,7 @@ COPY apps/auth apps/auth
 COPY libs libs
 
 
-RUN npm install -g pnpm
+RUN corepack enable
 RUN pnpm install --frozen-lockfile
 RUN npx prisma generate --schema=apps/auth/src/prisma/schema.prisma
 RUN npx prisma generate --schema=apps/files/src/prisma/schema.prisma

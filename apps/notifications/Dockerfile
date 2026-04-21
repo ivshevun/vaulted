@@ -10,7 +10,7 @@ COPY nest-cli.json nest-cli.json
 COPY apps/notifications apps/notifications
 COPY libs libs
 
-RUN npm install -g pnpm
+RUN corepack enable
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build notifications
 
