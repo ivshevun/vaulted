@@ -177,7 +177,7 @@ describe('Files e2e', () => {
           .expect(404);
       });
 
-      it('should set file status to FAILED if file is not in S3', async () => {
+      it('should return 400 and set file status to FAILED if file is not in S3', async () => {
         const uploadResponse = await request(httpServer)
           .get('/api/v1/files/upload-data')
           .query({
@@ -192,7 +192,8 @@ describe('Files e2e', () => {
         await request(httpServer)
           .post('/api/v1/files/confirm-upload')
           .send({ key: missingKey })
-          .set({ Authorization: `Bearer ${accessToken}` });
+          .set({ Authorization: `Bearer ${accessToken}` })
+          .expect(400);
 
         const file = await prisma.file.findUnique({
           where: { key: missingKey },
