@@ -1,0 +1,17 @@
+{
+  "name": "@apps/notifications",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@app/common": "workspace:*",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/terminus": "^11.1.1",
+    "@react-email/components": "^0.5.0",
+    "nestjs-pino": "^4.5.0",
+    "react": "^19.1.1",
+    "resend": "^6.0.1"
+  }
+}

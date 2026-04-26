@@ -1,0 +1,24 @@
+{
+  "name": "@apps/files",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@app/common": "workspace:*",
+    "@aws-sdk/client-s3": "^3.810.0",
+    "@aws-sdk/s3-request-presigner": "^3.810.0",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/microservices": "^11.1.0",
+    "@nestjs/terminus": "^11.1.1",
+    "@prisma/client": "6.6.0",
+    "amqp-connection-manager": "^4.1.14",
+    "amqplib": "^0.10.8",
+    "joi": "^17.13.3",
+    "nanoid": "^3.3.11",
+    "nestjs-pino": "^4.5.0",
+    "prisma": "^6.6.0",
+    "rxjs": "^7.8.1",
+    "uuid": "^11.1.0"
+  }
+}
