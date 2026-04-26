@@ -1,29 +1,13 @@
-import { INestApplication } from '@nestjs/common';
-import { Server } from 'http';
 import { LoginDto, RegisterDto } from '@app/common';
 import request from 'supertest';
 import { setupE2e } from '../utils';
 import { v4 as uuid } from 'uuid';
-import { PrismaService as AuthPrismaService } from '@apps/auth/src/prisma';
 
 describe('Auth (e2e)', () => {
-  let app: INestApplication;
-  let httpServer: Server;
-  let prisma: AuthPrismaService;
+  let baseUrl: string;
 
-  beforeAll(async () => {
-    const setup = await setupE2e();
-
-    app = setup.app;
-    httpServer = setup.httpServer;
-
-    prisma = app.get(AuthPrismaService);
-  });
-
-  afterAll(async () => {
-    await prisma.user.deleteMany();
-
-    await app.close();
+  beforeAll(() => {
+    ({ baseUrl } = setupE2e());
   });
 
   describe('Auth', () => {
@@ -39,13 +23,14 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 201 if user is created', async () => {
-        return request(httpServer)
+        return request(baseUrl)
           .post('/api/v1/auth/register')
           .send(registerDto)
           .expect(201);
       });
+
       it('should return an access token if user is created', async () => {
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(registerDto);
 
@@ -54,8 +39,9 @@ describe('Auth (e2e)', () => {
         expect(response.body).toHaveProperty('accessToken');
         expect(typeof body.accessToken).toBe('string');
       });
+
       it('should set a refreshToken cookie with correct security flags', async () => {
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(registerDto)
           .expect(201);
@@ -70,64 +56,73 @@ describe('Auth (e2e)', () => {
         expect(refreshCookie).toContain('Secure');
         expect(refreshCookie).toContain('SameSite=Lax');
       });
+
       it('should save a user in DB if user is created', async () => {
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(registerDto)
           .expect(201);
 
-        expect(
-          prisma.user.findUnique({ where: { email: registerDto.email } }),
-        ).toBeDefined();
-      });
-      it('should throw a ConflictException if user already exists', async () => {
-        // creating a user for the first time
-        await request(httpServer)
-          .post('/api/v1/auth/register')
-          .send(registerDto);
+        const response = await request(baseUrl)
+          .get('/dev/auth/users')
+          .query({ email: registerDto.email });
 
-        await request(httpServer)
+        expect(response.status).toBe(200);
+        expect((response.body as Record<string, string>).email).toBe(
+          registerDto.email,
+        );
+      });
+
+      it('should throw a ConflictException if user already exists', async () => {
+        await request(baseUrl).post('/api/v1/auth/register').send(registerDto);
+
+        await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(registerDto)
           .expect(409);
       });
+
       it('should throw a BadRequestException if no body provided to the request', async () => {
-        await request(httpServer).post('/api/v1/auth/register').expect(400);
+        await request(baseUrl).post('/api/v1/auth/register').expect(400);
       });
+
       it('should throw a BadRequestException if no email provided', async () => {
         const invalidDto = {
           password: registerDto.password,
           name: registerDto.name,
         };
 
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(invalidDto)
           .expect(400);
       });
+
       it('should throw a BadRequestException if no name provided', async () => {
         const invalidDto = {
           email: registerDto.email,
           password: registerDto.password,
         };
 
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(invalidDto)
           .expect(400);
       });
+
       it('should throw a BadRequestException if no password provided', async () => {
         const invalidDto = {
           name: registerDto.name,
           email: registerDto.email,
         };
 
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(invalidDto)
           .expect(400);
       });
     });
+
     describe('Login', () => {
       let registerDto: RegisterDto;
       let loginDto: LoginDto;
@@ -144,20 +139,18 @@ describe('Auth (e2e)', () => {
           password: registerDto.password,
         };
 
-        await request(httpServer)
-          .post('/api/v1/auth/register')
-          .send(registerDto);
+        await request(baseUrl).post('/api/v1/auth/register').send(registerDto);
       });
 
       it('should return 200 if credentials are valid', async () => {
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/login')
           .send(loginDto)
           .expect(200);
       });
 
       it('should return an access token if login is successful', async () => {
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/login')
           .send(loginDto);
 
@@ -165,7 +158,7 @@ describe('Auth (e2e)', () => {
       });
 
       it('should set a refreshToken cookie with correct security flags', async () => {
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/login')
           .send(loginDto);
 
@@ -181,7 +174,7 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 401 if email is invalid', async () => {
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/login')
           .send({
             email: 'wrong@email.com',
@@ -191,7 +184,7 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 401 if password is invalid', async () => {
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/login')
           .send({
             email: loginDto.email,
@@ -201,7 +194,7 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 400 if email is not provided', async () => {
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/login')
           .send({
             password: loginDto.password,
@@ -210,7 +203,7 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 400 if password is not provided', async () => {
-        await request(httpServer)
+        await request(baseUrl)
           .post('/api/v1/auth/login')
           .send({
             email: loginDto.email,
@@ -219,9 +212,10 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 400 if no body provided', async () => {
-        await request(httpServer).post('/api/v1/auth/login').expect(400);
+        await request(baseUrl).post('/api/v1/auth/login').expect(400);
       });
     });
+
     describe('Refresh', () => {
       let registerDto: RegisterDto;
       let refreshToken: string;
@@ -233,7 +227,7 @@ describe('Auth (e2e)', () => {
           name: 'Refresh Test',
         };
 
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/register')
           .send(registerDto)
           .expect(201);
@@ -246,14 +240,14 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 200 if refresh token is valid', async () => {
-        return request(httpServer)
+        return request(baseUrl)
           .post('/api/v1/auth/refresh')
           .set('Cookie', [`refreshToken=${refreshToken}`])
           .expect(200);
       });
 
       it('should return a new access token if refresh token is valid', async () => {
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/refresh')
           .set('Cookie', [`refreshToken=${refreshToken}`])
           .expect(200);
@@ -265,7 +259,7 @@ describe('Auth (e2e)', () => {
       });
 
       it('should set a new refreshToken cookie with correct security flags', async () => {
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/refresh')
           .set('Cookie', [`refreshToken=${refreshToken}`])
           .expect(200);
@@ -282,19 +276,20 @@ describe('Auth (e2e)', () => {
       });
 
       it('should return 401 if no refresh token is provided', async () => {
-        return request(httpServer).post('/api/v1/auth/refresh').expect(401);
+        return request(baseUrl).post('/api/v1/auth/refresh').expect(401);
       });
 
       it('should return 401 if refresh token is invalid', async () => {
-        return request(httpServer)
+        return request(baseUrl)
           .post('/api/v1/auth/refresh')
           .set('Cookie', [`refreshToken=invalid-token`])
           .expect(401);
       });
     });
+
     describe('Logout', () => {
       it('should remove refresh token from response', async () => {
-        const response = await request(httpServer)
+        const response = await request(baseUrl)
           .post('/api/v1/auth/logout')
           .expect(200);
 
