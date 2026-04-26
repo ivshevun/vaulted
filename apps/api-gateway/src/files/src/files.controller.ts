@@ -1,14 +1,14 @@
 import {
   FileStatusDto,
-  FileUploadedDto,
   FileUploadedPayload,
   GetFileStatusPayload,
-  GetUploadDataDto,
   GetUploadDataPayload,
   JwtGuard,
-  KeyDto,
   UserDto,
 } from '@app/common';
+import { FileUploadedDto } from './dto/file-uploaded.dto';
+import { GetUploadDataDto } from './dto/get-upload-data.dto';
+import { KeyDto } from './dto/key.dto';
 import {
   Body,
   Controller,

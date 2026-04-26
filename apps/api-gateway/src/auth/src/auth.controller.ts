@@ -7,7 +7,9 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { LoginDto, RegisterDto, RequestWithCookies } from '@app/common';
+import { RequestWithCookies } from '@app/common';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { catchError, firstValueFrom, timeout } from 'rxjs';
 import { AuthService } from './auth.service';
