@@ -74,7 +74,7 @@ describe('Files e2e', () => {
         const { key } = uploadResponse.body as { key: string };
 
         const response = await request(baseUrl)
-          .get('/dev/files')
+          .get('/api/v1/dev/files')
           .query({ key });
 
         expect((response.body as { slug: string }).slug).toMatch(
@@ -189,13 +189,13 @@ describe('Files e2e', () => {
 
         await poll(async () => {
           const response = await request(baseUrl)
-            .get('/dev/files')
+            .get('/api/v1/dev/files')
             .query({ key: missingKey });
           return (response.body as { status: string }).status === 'FAILED';
         });
 
         const response = await request(baseUrl)
-          .get('/dev/files')
+          .get('/api/v1/dev/files')
           .query({ key: missingKey });
         expect((response.body as { status: string }).status).toBe('FAILED');
       });
@@ -208,13 +208,13 @@ describe('Files e2e', () => {
 
         await poll(async () => {
           const response = await request(baseUrl)
-            .get('/dev/files')
+            .get('/api/v1/dev/files')
             .query({ key });
           return (response.body as { status: string }).status === 'FAILED';
         });
 
         const response = await request(baseUrl)
-          .get('/dev/files')
+          .get('/api/v1/dev/files')
           .query({ key });
         expect((response.body as { status: string }).status).toBe('FAILED');
       });
@@ -227,13 +227,13 @@ describe('Files e2e', () => {
 
         await poll(async () => {
           const response = await request(baseUrl)
-            .get('/dev/files')
+            .get('/api/v1/dev/files')
             .query({ key });
           return (response.body as { status: string }).status === 'CLEAN';
         });
 
         const response = await request(baseUrl)
-          .get('/dev/files')
+          .get('/api/v1/dev/files')
           .query({ key });
         const file = response.body as { status: string; scanned: boolean };
         expect(file.status).toBe('CLEAN');
@@ -261,13 +261,13 @@ describe('Files e2e', () => {
 
         await poll(async () => {
           const response = await request(baseUrl)
-            .get('/dev/files')
+            .get('/api/v1/dev/files')
             .query({ key: largeKey });
           return (response.body as { status: string }).status === 'CLEAN';
         });
 
         const response = await request(baseUrl)
-          .get('/dev/files')
+          .get('/api/v1/dev/files')
           .query({ key: largeKey });
         const file = response.body as { status: string; scanned: boolean };
         expect(file.status).toBe('CLEAN');
@@ -296,13 +296,13 @@ describe('Files e2e', () => {
         // poll until antivirus pipeline completes: file.uploaded → ClamAV scan → file.scan.infected → cleanup
         await poll(async () => {
           const response = await request(baseUrl)
-            .get('/dev/files')
+            .get('/api/v1/dev/files')
             .query({ key: infectedKey });
           return response.status === 404;
         });
 
         const response = await request(baseUrl)
-          .get('/dev/files')
+          .get('/api/v1/dev/files')
           .query({ key: infectedKey });
         expect(response.status).toBe(404);
 

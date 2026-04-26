@@ -64,7 +64,7 @@ describe('Auth (e2e)', () => {
           .expect(201);
 
         const response = await request(baseUrl)
-          .get('/dev/auth/users')
+          .get('/api/v1/dev/auth/users')
           .query({ email: registerDto.email });
 
         expect(response.status).toBe(200);
