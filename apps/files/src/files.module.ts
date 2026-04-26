@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HealthModule } from './health/health.module';
 import Joi from 'joi';
 import { PrismaModule } from './prisma';
+import { devImports } from './dev/utils';
 import { pinoConfig } from '@app/common';
 import { RMQ_EXCHANGE } from '@app/common/constants';
 import { LoggerModule } from 'nestjs-pino';
@@ -46,6 +47,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         inject: [ConfigService],
       },
     ]),
+    ...devImports(process.env.NODE_ENV),
   ],
   controllers: [FilesController],
   providers: [FilesService, FilesRepository],

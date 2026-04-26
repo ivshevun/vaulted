@@ -21,6 +21,8 @@ export {
   FILE_GET_READ_URL,
   FILE_CONFIRM_UPLOAD,
   FILE_GET_STATUS,
+  AUTH_DEV_GET_USER,
+  FILE_DEV_GET_FILE,
 } from './messages.constants';
 export {
   AUTH_QUEUE,

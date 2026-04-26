@@ -8,6 +8,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
 import { AUTH_QUEUE, FILES_QUEUE, RMQ_EXCHANGE } from '@app/common/constants';
 import { HealthModule } from './health/health.module';
+import { devImports } from './dev/utils';
 import Joi from 'joi';
 
 @Module({
@@ -70,6 +71,7 @@ import Joi from 'joi';
     AuthModule,
     FilesModule,
     LoggerModule.forRoot(pinoConfig),
+    ...devImports(process.env.NODE_ENV),
   ],
   controllers: [FilesController],
   providers: [],

@@ -23,6 +23,6 @@ export class FilesRepository {
   }
 
   findFile(dto: QueryFileDto): Promise<File | null> {
-    return this.prisma.file.findFirst({ where: dto });
+    return this.prisma.file.findUnique({ where: dto });
   }
 }
