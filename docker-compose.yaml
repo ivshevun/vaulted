@@ -46,6 +46,8 @@ services:
     volumes:
       - ./apps:/usr/src/app/apps
       - ./libs:/usr/src/app/libs
+      - /usr/src/app/apps/auth/node_modules/@prisma
+      - /usr/src/app/apps/files/node_modules/@prisma
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3001/health']
       interval: 30s
@@ -73,6 +75,7 @@ services:
     volumes:
       - ./apps/auth:/usr/src/app/apps/auth
       - ./libs:/usr/src/app/libs
+      - /usr/src/app/apps/auth/node_modules/@prisma
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3002/health']
       interval: 30s
@@ -98,6 +101,7 @@ services:
     volumes:
       - ./apps/files:/usr/src/app/apps/files
       - ./libs:/usr/src/app/libs
+      - /usr/src/app/apps/files/node_modules/@prisma
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3003/health']
       interval: 30s
