@@ -1,10 +1,9 @@
-import { createS3Client } from '@app/common';
 import { DeleteObjectsCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { ConfigService } from '@nestjs/config';
+import { createS3Client } from './create-s3-client';
 
-export async function clearS3Bucket(configService: ConfigService) {
-  const s3 = createS3Client(configService);
-  const bucketName = configService.get<string>('AWS_S3_BUCKET_NAME')!;
+export async function clearS3Bucket() {
+  const s3 = createS3Client();
+  const bucketName = process.env.AWS_S3_BUCKET_NAME!;
 
   const { Contents } = await s3.send(
     new ListObjectsV2Command({ Bucket: bucketName }),
