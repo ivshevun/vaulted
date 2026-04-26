@@ -10,6 +10,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { pinoConfig } from '@app/common';
 import { UsersModule } from '@apps/auth/src/users/src/users.module';
 import { HealthModule } from './health/health.module';
+import { devImports } from './dev/utils';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { HealthModule } from './health/health.module';
     UsersModule,
     PrismaModule,
     TokenModule,
+    ...devImports(process.env.NODE_ENV),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
