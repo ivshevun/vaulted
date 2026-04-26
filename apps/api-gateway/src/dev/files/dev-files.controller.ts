@@ -14,7 +14,7 @@ import { FILE_DEV_GET_FILE, RMQ_EXCHANGE } from '@app/common/constants';
 export class DevFilesController {
   constructor(@Inject(RMQ_EXCHANGE) private readonly eventBus: ClientProxy) {}
 
-  @Get('files')
+  @Get()
   async getFile(@Query('key') key: string) {
     if (!key) throw new BadRequestException();
 
