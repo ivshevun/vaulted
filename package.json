@@ -21,11 +21,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest",
     "test:e2e": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json --detect-open-handles",
     "test:e2e:watch": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json --watchAll",
-    "test:e2e:auth:watch": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json --watch --testPathPattern=e2e/specs/auth.e2e-spec",
-    "test:e2e:files:watch": "dotenv -e .env.test -- jest --config ./e2e/jest-e2e.json --watch --testPathPattern=e2e/specs/files.e2e-spec",
     "typecheck": "tsc --noEmit",
-    "docker:test-e2e": "docker compose -f docker-compose.e2e.yaml up -d --wait && docker exec vaulted-api-gateway-test pnpm test:e2e",
-    "docker:test-e2e-build": "docker compose -f docker-compose.e2e.yaml up --build -d --wait && docker exec vaulted-api-gateway-test pnpm test:e2e"
+    "docker:test-e2e": "docker compose -f docker-compose.e2e.yaml up -d --wait && docker compose -f docker-compose.e2e.yaml run --rm --no-deps e2e-runner",
+    "docker:test-e2e-build": "docker compose -f docker-compose.e2e.yaml up --build -d --wait && docker compose -f docker-compose.e2e.yaml run --rm --no-deps e2e-runner",
+    "docker:test-e2e:watch": "docker compose -f docker-compose.e2e.yaml up -d --wait && docker compose -f docker-compose.e2e.yaml run --rm --no-deps e2e-runner pnpm test:e2e:watch"
   },
   "devDependencies": {
     "@aws-sdk/util-stream": "^3.374.0",

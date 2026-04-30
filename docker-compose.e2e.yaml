@@ -1,14 +1,3 @@
-x-e2e-base: &e2e-base
-  build:
-    context: .
-    dockerfile: ./e2e/Dockerfile
-  platform: linux/amd64
-  volumes:
-    - ./.env.test:/usr/src/app/.env.test
-  depends_on:
-    api-gateway:
-      condition: service_healthy
-
 services:
   minio:
     image: minio/minio
@@ -85,23 +74,23 @@ services:
       antivirus:
         condition: service_healthy
   e2e-runner:
-    <<: *e2e-base
     container_name: vaulted-e2e-runner-test
     profiles: ['test']
-    restart: 'no'
-    command: pnpm test:e2e
-
-  e2e-runner-watch:
-    <<: *e2e-base
-    container_name: vaulted-e2e-runner-watch-test
-    profiles: ['watch']
+    build:
+      context: .
+      dockerfile: ./e2e/Dockerfile
+    platform: linux/amd64
     stdin_open: true
     tty: true
+    restart: 'no'
     volumes:
       - ./.env.test:/usr/src/app/.env.test
       - ./e2e:/usr/src/app/e2e
       - ./libs:/usr/src/app/libs
-    command: pnpm test:e2e:watch
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    command: pnpm test:e2e
 
   auth:
     restart: unless-stopped
