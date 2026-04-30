@@ -1,3 +1,14 @@
+x-e2e-base: &e2e-base
+  build:
+    context: .
+    dockerfile: ./e2e/Dockerfile
+  platform: linux/amd64
+  volumes:
+    - ./.env.test:/usr/src/app/.env.test
+  depends_on:
+    api-gateway:
+      condition: service_healthy
+
 services:
   minio:
     image: minio/minio
@@ -50,8 +61,6 @@ services:
     volumes:
       - ./apps:/usr/src/app/apps
       - ./libs:/usr/src/app/libs
-      - ./e2e:/usr/src/app/e2e
-      - ./.env.test:/usr/src/app/.env.test
       - /usr/src/app/apps/auth/node_modules/@prisma
       - /usr/src/app/apps/files/node_modules/@prisma
     healthcheck:
@@ -75,6 +84,25 @@ services:
         condition: service_healthy
       antivirus:
         condition: service_healthy
+  e2e-runner:
+    <<: *e2e-base
+    container_name: vaulted-e2e-runner-test
+    profiles: ['test']
+    restart: 'no'
+    command: pnpm test:e2e
+
+  e2e-runner-watch:
+    <<: *e2e-base
+    container_name: vaulted-e2e-runner-watch-test
+    profiles: ['watch']
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./.env.test:/usr/src/app/.env.test
+      - ./e2e:/usr/src/app/e2e
+      - ./libs:/usr/src/app/libs
+    command: pnpm test:e2e:watch
+
   auth:
     restart: unless-stopped
     container_name: vaulted-auth-test
