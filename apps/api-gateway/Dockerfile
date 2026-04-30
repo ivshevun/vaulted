@@ -9,7 +9,6 @@ COPY webpack.config.js webpack.config.js
 
 COPY libs/common/package.json libs/common/package.json
 COPY apps/api-gateway/package.json apps/api-gateway/package.json
-COPY e2e/package.json e2e/package.json
 
 COPY .docker/stubs/files.json apps/files/package.json
 COPY .docker/stubs/auth.json apps/auth/package.json
@@ -17,9 +16,8 @@ COPY .docker/stubs/antivirus.json apps/antivirus/package.json
 COPY .docker/stubs/notifications.json apps/notifications/package.json
 
 RUN corepack enable
-RUN pnpm install --filter @apps/api-gateway --filter @app/e2e --filter @app/common
+RUN pnpm install --filter @apps/api-gateway --filter @app/common
 
-COPY e2e e2e
 COPY apps/api-gateway apps/api-gateway
 COPY apps/files apps/files
 COPY apps/auth apps/auth
