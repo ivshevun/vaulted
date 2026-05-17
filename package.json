@@ -99,6 +99,9 @@
     ],
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
+    "setupFiles": [
+      "reflect-metadata"
+    ],
     "roots": [
       "<rootDir>/libs/",
       "<rootDir>/apps/"
