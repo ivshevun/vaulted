@@ -234,8 +234,8 @@ services:
       test: ['CMD', 'rabbitmq-diagnostics', 'ping']
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 15
+      start_period: 60s
   clamav-signatures:
     image: clamav/clamav:1.5
     container_name: vaulted-clamav-signatures
@@ -270,8 +270,8 @@ services:
         ['CMD', 'sh', '-c', 'echo PING | nc -w 1 127.0.0.1 3310 | grep PONG']
       interval: 10s
       timeout: 3s
-      retries: 20
-      start_period: 120s
+      retries: 30
+      start_period: 180s
     depends_on:
       clamav-signatures:
         condition: service_healthy
@@ -290,8 +290,8 @@ services:
         ['CMD', 'sh', '-c', 'echo PING | nc -w 1 127.0.0.1 3310 | grep PONG']
       interval: 10s
       timeout: 3s
-      retries: 20
-      start_period: 120s
+      retries: 30
+      start_period: 180s
     depends_on:
       clamav-signatures:
         condition: service_healthy
