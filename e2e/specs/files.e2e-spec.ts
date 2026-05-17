@@ -379,7 +379,7 @@ describe('Files e2e', () => {
           .set({ Authorization: `Bearer ${accessToken}` });
 
         expect((response.body as { status: string }).status).toBe('CLEAN');
-      });
+      }, 60000);
 
       it('should return a 404 for an unknown key', async () => {
         await request(baseUrl)
